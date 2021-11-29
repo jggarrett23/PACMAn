@@ -9,7 +9,7 @@ Conducting the meta-analysis requires:
 * R (> 4.X)
 * brms 
 
-The **brms** package can be tricky to install, so I recommend following the directions in the [brms repository](https://github.com/paul-buerkner/brms#how-do-i-install-brms).
+The **brms** package can be tricky to install, so I recommend following the directions in the [brms repository](https://github.com/paul-buerkner/brms#faq).
 Let me know if you need any help with that step.
 
 # USAGE
