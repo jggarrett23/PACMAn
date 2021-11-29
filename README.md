@@ -10,8 +10,7 @@ Conducting the meta-analysis requires:
 * R (> 4.X)
 * brms 
 
-The **brms** package can be tricky to install, so I recommend following the directions in the [brms repository](https://github.com/paul-buerkner/brms#faq).
-Let me know if you need any help with that step.
+To install the **brms** package follow the directions for your operating system in the [brms repository](https://github.com/paul-buerkner/brms#faq).
 
 # USAGE
 For the meta-analysis, we utilized a Bayesian hierarchical model. This analysis can be carried out using *Bayesian_Modeling.R*. Modeled effect sizes are located in the Data folder,
