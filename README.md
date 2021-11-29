@@ -1,6 +1,7 @@
 # PACMAn: Physical Activity and Cognition Meta-Analysis
-
+=======================================================
 # Description
+-------------
 PACMAn contains scripts for conducting a meta-analysis of the acute effects of exercise on cognition. 
 
 # REQUIREMENTS
