@@ -22,7 +22,8 @@ The meta-analysis was conducted using a Bayesian hierarchical model. Model files
 * Cognitive domain
 * Exercise intensity
 
-To work with these models immediately, download them from the google drive link into a folder called **Models**. Here is an example of how models can be loaded
+To work with these models immediately, download them from the google drive link into a folder called **Models**. Loading them requires a specification of the covariates
+within the model, priors, data, and the saved file name. For example:
 ```R
 # call brms package
 library(brms)
@@ -42,16 +43,12 @@ overall_model <- brm(g|se(g_se) ~ 1 + (1|Author/es.ids),
                     file_refit='on_change')
 
 ```
+If either the covariates included in the model, priors, or the data are changed, then a new model will be created. Setting `file_refit='on_change'` will load the model and 
+posteriors unless the aformentioned inputs have be altered. 
 
-These models were created using the *Bayesisan_Modeling.R* script. Effect sizes can be found in the *Data* folder within *allStudies_effects.rds*. Then, the modeling script can be run and you can work with the 
-models immediately rather than having to wait for them to converge.
+Models within the google drive were created using *Bayesian_Modeling.R*, which includeds their formulas and priors. You can use this script to generate your own models.
+Effect sizes can be found in the *Data* folder within *allStudies_effects.rds*, which is passed into the modeling sript.
 
-
-
-
-
-
-If you want to include your own additional studies in the analysis, add the study information (e.g., means, standard deviations, etc.) to
+If you want to incorporate your own studies in the analysis, add the study information (e.g., means, standard deviations, etc.) to
 the proper columns in *PACMAN Effect Sizes.xlsx*. Afterwards, run *Compute_EffectSizes.R* and they will be added to the effects .rds file. Note, there is a lot of variability 
-in experimental design across studies. Thus, many logical statements had to be included to ensure that each effect size was computed properly. You are encouraged to check the validity
-of computed effect sizes after running the script.
+in experimental design across studies. Thus, many logical statements had to be included to ensure that each effect size was computed properly. You are encouraged to check the validity of computed effect sizes after running the script.
