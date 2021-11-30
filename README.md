@@ -22,7 +22,7 @@ The meta-analysis was conducted using a Bayesian hierarchical model. Model files
 * Cognitive domain
 * Exercise intensity
 
-To work with these models immediately, download them from the google drive link into a folder called **Models**. Loading them requires a specification of the covariates
+To work with these models immediately, download them from the google drive link into a folder called **Models**. Loading them requires a specification of the predictors
 within the model, priors, data, and the saved file name. For example:
 ```R
 # call brms package
@@ -43,8 +43,16 @@ overall_model <- brm(g|se(g_se) ~ 1 + (1|Author/es.ids),
                     file_refit='on_change')
 
 ```
-If either the covariates included in the model, priors, or the data are changed, then a new model will be created. Setting `file_refit='on_change'` will load the model and 
-posteriors unless the aformentioned inputs have be altered. 
+If either the predictors included in the model, priors, or the data are changed, then a new model will be created. 
+Once the model has been loaded, the posteriors for the beta weight on each predictor can be extracted:
+```R
+# extract posteriors for the beta weights (i.e. any column name ending with a 'b') and heterogenities (i.e., 'sd')
+post_samps <- posterior_samples(overall_model, c('^b', '^sd'))
+
+# changes names to be more interpretable. these names will change according to the predictors in the model
+names(post_samps) <- c('g','tau1','tau2')
+```
+
 
 Models within the google drive were created using *Bayesian_Modeling.R*, which includeds their formulas and priors. You can use this script to generate your own models.
 Effect sizes can be found in the *Data* folder within *allStudies_effects.rds*, which is passed into the modeling sript to convert them into Hedge's *g*.
