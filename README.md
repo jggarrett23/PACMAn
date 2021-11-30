@@ -33,7 +33,8 @@ modelDir <- 'Models/'
 priors <- c(prior(normal(0,1), class=Intercept),
             prior(cauchy(0,0.5), class=sd))
 
-# meta-analysis (i.e. intercept model)
+# meta-analysis with random effects model
+# Note: brms follows the formula convention of lme4, where the '|' and '/' indicate nesting of covariates.
 overall_model <- brm(g|se(g_se) ~ 1 + (1|Author/es.ids),
                     data=data
                     prior=priors
