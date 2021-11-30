@@ -27,7 +27,7 @@ To work with these models immediately, download them from the google drive link 
 # call brms package
 library(brms)
 
-modelDir <- ('Models\')
+modelDir <- 'Models/'
 
 # set priors. using a weakly informative normal prior for the overall effect and a cauchy prior for heterogenity
 priors <- c(prior(normal(0,1), class=Intercept),
