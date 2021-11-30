@@ -47,7 +47,7 @@ If either the covariates included in the model, priors, or the data are changed,
 posteriors unless the aformentioned inputs have be altered. 
 
 Models within the google drive were created using *Bayesian_Modeling.R*, which includeds their formulas and priors. You can use this script to generate your own models.
-Effect sizes can be found in the *Data* folder within *allStudies_effects.rds*, which is passed into the modeling sript.
+Effect sizes can be found in the *Data* folder within *allStudies_effects.rds*, which is passed into the modeling sript to convert them into Hedge's *g*.
 
 If you want to incorporate your own studies in the analysis, add the study information (e.g., means, standard deviations, etc.) to
 the proper columns in *PACMAN Effect Sizes.xlsx*. Afterwards, run *Compute_EffectSizes.R* and they will be added to the effects .rds file. Note, there is a lot of variability 
