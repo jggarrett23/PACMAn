@@ -55,7 +55,7 @@ names(post_samps) <- c('g','tau1','tau2')
 To make predictions using the loaded model:
 ```R
 # make predictions based on new data
-pp <- predict(overall_model, newdata=new_data)
+preds <- predict(overall_model, newdata=new_data)
 ```
 
 Models within the google drive were created using *Bayesian_Modeling.R*, which includeds their formulas and priors. You can use this script to generate your own models.
