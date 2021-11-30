@@ -29,9 +29,9 @@ library(reshape2)
 library(googlesheets4)
 library(gt)
 
-# --- Helper Functions ---
+# --- Setting Up Directories ---
 
-parentDir <- 'D:/PACMAn'
+parentDir <- getwd()
 dataDir <- file.path(parentDir,'Data')
 modelDir <- file.path(parentDir,'Models')
 plotDir <- file.path(parentDir,'Figures')

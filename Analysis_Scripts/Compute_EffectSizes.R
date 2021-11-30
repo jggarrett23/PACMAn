@@ -103,17 +103,20 @@ es.var <- function(design,cond1.n,cond2.n,smd){
 
 ## ---- Load Data ----
 
-parentDir <- 'D:/PACMAn'
+parentDir <- getwd()
 dataDir <- file.path(parentDir,'Data')
 
 setwd(dataDir)
 
-gs4_auth(email = 'jordangarrett@ucsb.edu')
-sheet_link <- 'https://docs.google.com/spreadsheets/d/1I7TtqSe9-p8RNyXuS_DJw3f0KmSOWysx9_lxFKaNSLM/edit#gid=0'
-allStudy_data <- read_sheet(sheet_link,sheet='Sheet1')
+#gs4_auth(email = 'jordangarrett@ucsb.edu')
+#sheet_link <- 'https://docs.google.com/spreadsheets/d/1I7TtqSe9-p8RNyXuS_DJw3f0KmSOWysx9_lxFKaNSLM/edit#gid=0'
+#allStudy_data <- read_sheet(sheet_link,sheet='Sheet1')
+#allStudy.acsmIntensities <- read_sheet(sheet_link,sheet='ACSM Intensities')
 
+data_file = 'PACMAN Effect Sizes.xlsx'
 
-allStudy.acsmIntensities <- read_sheet(sheet_link,sheet='ACSM Intensities')
+allStudy_data <- read_excel(data_file, sheet='Data')
+allStudy.acsmIntensities <- read_excel(data_file, sheet='ACSM Intensities')
 
 
 ## ---- Preprocessing ----
