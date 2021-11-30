@@ -7,10 +7,10 @@ PACMAn contains scripts for conducting a meta-analysis of the acute effects of e
 # REQUIREMENTS
 --------------
 Conducting the meta-analysis requires:
-* R (> 4.X)
-* brms 
+* R version > 4.X
+* brms package 
 
-To install the **brms** package follow the directions for your operating system in the [brms repository](https://github.com/paul-buerkner/brms#faq).
+The brms package is a little finicky to install. To install the **brms** package follow the directions for your operating system in the [brms repository](https://github.com/paul-buerkner/brms#faq).
 
 # USAGE
 For the meta-analysis, we utilized a Bayesian hierarchical model. This analysis can be carried out using *Bayesian_Modeling.R*. Modeled effect sizes are located in the Data folder,
