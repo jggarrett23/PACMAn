@@ -52,7 +52,11 @@ post_samps <- posterior_samples(overall_model, c('^b', '^sd'))
 # changes names to be more interpretable. these names will change according to the predictors in the model
 names(post_samps) <- c('g','tau1','tau2')
 ```
-
+To make predictions using the loaded model:
+```R
+# make predictions based on new data
+pp <- predict(overall_model, newdata=new_data)
+```
 
 Models within the google drive were created using *Bayesian_Modeling.R*, which includeds their formulas and priors. You can use this script to generate your own models.
 Effect sizes can be found in the *Data* folder within *allStudies_effects.rds*, which is passed into the modeling sript to convert them into Hedge's *g*.
