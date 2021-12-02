@@ -43,7 +43,7 @@ overall_model <- brm(g|se(g_se) ~ 1 + (1|Author/es.ids),
                     file_refit='on_change')
 
 ```
-**NOTE**: Before running any of the scripts make sure to set the current project to *Pacman.Rproj*. This will ensure that your working directory is set to the repository folder.
+**NOTE**: Before running any of the scripts make sure to set the current project to *PACMAn.Rproj*. This will ensure that your working directory is set to the repository folder.
 
 If either the predictors included in the model, priors, or the data are changed, then a new model will be created. 
 Once the model has been loaded, the posteriors for the beta weight on each predictor can be extracted:
