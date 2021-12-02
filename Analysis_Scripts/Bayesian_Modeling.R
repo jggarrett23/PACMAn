@@ -26,7 +26,6 @@ library(tidybayes)
 library(glue)
 library(ggridges)
 library(reshape2)
-library(googlesheets4)
 library(gt)
 
 # --- Setting Up Directories ---
@@ -359,11 +358,10 @@ overall_model <- brm(g|se(g_se) ~ 1 + (1|Author/es.ids),
                      file=paste(modelDir,'overall_random',sep='/'),
                      file_refit = 'on_change')
 
-# Group-Level effects: sd(Intercept) represents between-study heterogenity, or tau
+# Group-Level effects: sd(Intercept) represents between-study heterogeneity, or tau
 # Population-Level effects: Intercept represents the overall pooled effect of the analysis
 
 summary(overall_model)
-
 
 ## ---- Posteriors ----
 
@@ -472,7 +470,7 @@ ggsave('Overall_Model_Posteriors.jpg', plot=overall_plot, path=plotDir,
 
 ## ---- Posterior Predictive Check ----
 
-overall_model.ppc_plot <- pp_check(overall_model, nsamples=100) + 
+overall_model.ppc_plot <- pp_check(overall_model, ndraws=100) + 
   labs(x = expression("Hedge's "*italic(g)),
        y = 'Density',
        title='Overall Model: Posterior Predictive Check') +
