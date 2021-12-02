@@ -13,7 +13,7 @@ Conducting the meta-analysis requires:
 The brms package is a little finicky to install. To install the **brms** package follow the directions for your operating system in the [brms repository](https://github.com/paul-buerkner/brms#faq).
 
 # USAGE
-The meta-analysis was conducted using a Bayesian hierarchical model. Model files can be downloaded from the Attention Lab [google drive](https://drive.google.com/drive/folders/1VJ0x-WGR0ZiCf7OIfjBIddwbkET4LIrR?usp=sharing), and includes an analyses of the following exercise factors on cognition:
+The meta-analysis was conducted using a Bayesian hierarchical model. Model files can be downloaded from the Attention Lab [google drive](https://drive.google.com/drive/folders/1VJ0x-WGR0ZiCf7OIfjBIddwbkET4LIrR?usp=sharing), and includes analyses of the following exercise factors on cognition:
 * Duration
 * Experimental task
 * Task outcome measure (RT and Accuracy)
@@ -43,6 +43,8 @@ overall_model <- brm(g|se(g_se) ~ 1 + (1|Author/es.ids),
                     file_refit='on_change')
 
 ```
+**NOTE**: Before running any of the scripts make sure to set the current project to *Pacman.Rproj*. This will ensure that your working directory is set to the repository folder.
+
 If either the predictors included in the model, priors, or the data are changed, then a new model will be created. 
 Once the model has been loaded, the posteriors for the beta weight on each predictor can be extracted:
 ```R
