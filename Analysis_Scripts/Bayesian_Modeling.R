@@ -14,6 +14,9 @@ if(!require('tidybayes')) install.packages('tidybayes')
 if(!require('cowplot')) install.packages('cowplot')
 if(!require('glue')) install.packages('glue')
 if(!require('ggridges')) install.packages('ggridges')
+if(!require('logspline')) install.packages('logspline')
+if(!require('see')) install.packages('see')
+if(!require('bayestestR')) install.packages('bayestestR')
 
 library(tidyverse)
 library(dplyr)
@@ -27,6 +30,7 @@ library(glue)
 library(ggridges)
 library(reshape2)
 library(gt)
+library(bayestestR)
 
 # --- Setting Up Directories ---
 
@@ -358,6 +362,7 @@ overall_model <- brm(g|se(g_se) ~ 1 + (1|Author/es.ids),
                      file=paste(modelDir,'overall_random',sep='/'),
                      file_refit = 'on_change')
 
+
 # Group-Level effects: sd(Intercept) represents between-study heterogeneity, or tau
 # Population-Level effects: Intercept represents the overall pooled effect of the analysis
 
@@ -365,9 +370,9 @@ summary(overall_model)
 
 ## ---- Posteriors ----
 
-overall_model.post_samps <- posterior_samples(overall_model, c('^b','^sd'))
+overall_model.post_samps <- as_draws_df(overall_model, variable=c('^b','^sd'), regex = T)
 
-names(overall_model.post_samps) <- c('g','tau1','tau2')
+names(overall_model.post_samps)[c(1:3)] <- c('g','tau1','tau2')
 
 
 overall_model.post_hdi <- mean_hdi(overall_model.post_samps, .width=hdi_width)
@@ -1091,8 +1096,22 @@ intensity_cogDomain.model <- brm(g|se(g_se) ~ 1 + (1|Author/es.ids) + Ex.ACSM.2*
                                  file_refit = 'on_change')
 
 
+# ---- Hypothesis Testing and Model Comparisons ----
 
+# use bayes factors to determine the amount of evidence for model parameters to be different from 0
+# use WAIC to do model comparison, then test model parameters using bayes factors
 
+# To get stable bayes factors, best to use 10000 iterations
 
+# to test the pooled effect in the meta-analysis model, 
+# have to make the intercept into a beta coefficient
+overall_model.2 <- brm(g|se(g_se) ~ 0 + Intercept +  (1|Author/es.ids),
+                       data=global.exInfluence.studies,
+                       prior= priors[-1,],
+                       iter = 10000, chains = 4, warmup=5000,
+                       save_pars = save_pars(all=T), seed = 123,
+                       file=paste(modelDir,'overall_model_2',sep='/'),
+                       file_refit = 'on_change')
 
+overall_model.bf <- bayesfactor_parameters(overall_model.2)
 
