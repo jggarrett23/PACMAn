@@ -1103,6 +1103,8 @@ intensity_cogDomain.model <- brm(g|se(g_se) ~ 1 + (1|Author/es.ids) + Ex.ACSM.2*
 
 # To get stable bayes factors, best to use 10000 iterations
 
+# Bayes factors approximated using the Savage-Dickey Ratio
+
 # to test the pooled effect in the meta-analysis model, 
 # have to make the intercept into a beta coefficient
 overall_model.2 <- brm(g|se(g_se) ~ 0 + Intercept +  (1|Author/es.ids),
@@ -1113,5 +1115,5 @@ overall_model.2 <- brm(g|se(g_se) ~ 0 + Intercept +  (1|Author/es.ids),
                        file=paste(modelDir,'overall_model_2',sep='/'),
                        file_refit = 'on_change')
 
-overall_model.bf <- bayesfactor_parameters(overall_model.2)
+overall_model.bf <- bayesfactor_parameters(overall_model.2, null=0)
 
