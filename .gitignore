@@ -1,0 +1,6 @@
+#ignore files
+Models\
+Figures\
+Meta_Raw_Searches\
+Data\.R*
+Analysis_Scripts\Pooled_Modeling.R
