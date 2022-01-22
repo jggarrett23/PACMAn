@@ -317,6 +317,7 @@ g.effects_plot <- ggplot(data=global.exInfluence.studies, aes(x=g, y=factor(ID),
 ggsave('Effects_Scatter.jpg', plot = g.effects_plot, path=plotDir,
        units='in', width = 3, height = 8)
 
+
 ## ---- Setting up Priors ----
 # Intercept represents mu, while sd represents tau
 
@@ -357,7 +358,7 @@ between effect sizes.
 overall_model <- brm(g|se(g_se) ~ 1 + (1|Author/es.ids),
                      data=global.exInfluence.studies,
                      prior=overall_effect.priors,
-                     iter = 5000, chains = 4, warmup=1000,
+                     iter = 10000, chains = 4, warmup=2000,
                      save_pars = save_pars(all=T), seed = 123,
                      file=paste(modelDir,'overall_random',sep='/'),
                      file_refit = 'on_change')
@@ -368,6 +369,7 @@ overall_model <- brm(g|se(g_se) ~ 1 + (1|Author/es.ids),
 
 summary(overall_model)
 
+
 ## ---- Posteriors ----
 
 overall_model.post_samps <- as_draws_df(overall_model, variable=c('^b','^sd'), regex = T)
@@ -375,7 +377,7 @@ overall_model.post_samps <- as_draws_df(overall_model, variable=c('^b','^sd'), r
 names(overall_model.post_samps)[c(1:3)] <- c('g','tau1','tau2')
 
 
-overall_model.post_hdi <- mean_hdi(overall_model.post_samps, .width=hdi_width)
+overall_model.post_hdi <- mode_hdi(overall_model.post_samps, .width=hdi_width)
 
 # Plot posterior distribution
 
@@ -473,12 +475,69 @@ overall_plot <- grid.arrange(overall.mu_plot,overall.tau1_plot, overall.tau2_plo
 ggsave('Overall_Model_Posteriors.jpg', plot=overall_plot, path=plotDir,
        units='in', width=5, height=4)
 
+## ---- Quantify Heterogeneity ----
+# Use Higgins and Thompson (2002) to estimate within study variance. Then use estimate to compute I^2
+
+estimate_v.q <- function(effect_variances){
+  nume <- (length(effect_variances) - 1) * sum(1/effect_variances)
+  denom <- (sum(1/effect_variances)^2) - sum(1/effect_variances^2)
+  
+  return(nume/denom)
+}
+
+v.q <- estimate_v.q(global.exInfluence.studies$g_se)
+
+# Compute posteriors of I^2 for each level
+I.2.lvl_2 <- overall_model.post_samps$tau2^2/(overall_model.post_samps$tau1^2 + 
+                                              overall_model.post_samps$tau2^2 + v.q)
+
+I.2.lvl_3 <- overall_model.post_samps$tau1^2/(overall_model.post_samps$tau1^2 + 
+                                                overall_model.post_samps$tau2^2 + v.q)
+
+# Degree of heterogeneity within studies
+mode_hdi(I.2.lvl_2*100,.width=hdi_width)
+
+# degree of heterogeneity between studies
+mode_hdi(I.2.lvl_3*100,.width=hdi_width)
+
+## ---- Publication Bias ----
+# Funnel Plot
+
+se.seq <- seq(0,max(global.exInfluence.studies$g_se),length.out=nrow(global.exInfluence.studies))
+
+# psuedo confidence interval
+lwr <- overall_model.post_hdi$g - (1.96*se.seq)
+uppr <- overall_model.post_hdi$g + (1.96*se.seq)
+
+funnel <- ggplot(global.exInfluence.studies, aes(x=g, y=g_se)) + 
+  geom_point(shape=1) + 
+  geom_segment(aes(x=overall_model.post_hdi$g, y=0, xend=overall_model.post_hdi$g, yend=max(g_se)),
+               color='blue') + 
+  geom_line(aes(x=lwr, y=se.seq), linetype='dashed') + 
+  geom_line(aes(x=uppr, y=se.seq), linetype='dashed') + 
+  xlim(c(-13,13)) + 
+  labs(x = expression("Hedge's "*italic(g)),
+         y = 'Standard Error') +
+  scale_y_reverse() + 
+  theme_bw() +
+  theme(panel.grid = element_blank())
+
+# Egger's Regression Test
+eggs.test <- global.exInfluence.studies %>% 
+  mutate(y = g/g_se, x=1/g_se) %>% 
+  brm(y ~ 0 + Intercept + x, data=., prior=c(prior(normal(0,1), class=b)),
+      iter=5000, warmup=1000, save_pars=save_pars(all=T))
+  
+eggs.test_hdi <- as_draws_df(eggs.test, variable='b_Intercept') %>% 
+  mode_hdi(.width=hdi_width)
+
 ## ---- Posterior Predictive Check ----
 
 overall_model.ppc_plot <- pp_check(overall_model, ndraws=100) + 
   labs(x = expression("Hedge's "*italic(g)),
        y = 'Density',
        title='Overall Model: Posterior Predictive Check') +
+  xlim(c(-4,4)) + 
   theme_minimal() +
   theme(
     plot.title = element_text(size=13,hjust = 0.5),
@@ -648,7 +707,7 @@ ggsave('Overall_Forest_Plot.jpg', plot=overall_forest.plot, path=plotDir,
 # Influence of exercise Intensity
 exIntensity.model <- update(overall_model, formula. = ~ . + Ex.ACSM.2,
                             newdata = global.exInfluence.studies,
-                            prior = priors, iter = 5000, chains = 4, warmup=1000,
+                            prior = priors, iter = 10000, chains = 4, warmup=2000,
                             save_pars=save_pars(all=T), seed=123,
                             file=paste(modelDir,'subgroup_intensity', sep='/'),
                             file_refit = 'on_change')
@@ -704,7 +763,7 @@ ggsave('Subgroup_exIntensity_Posteriors.jpg', plot=intensity_model.posterior_plo
 cogDomain_model <- update(overall_model, formula. = ~ . + Domain.2,
                        newdata=global.exInfluence.studies,
                        prior= priors,
-                       iter = 5000, chains = 4, warmup=1000,
+                       iter = 10000, chains = 4, warmup=2000,
                        save_pars = save_pars(all=T), seed = 123,
                        file=paste(modelDir,'subgroup_cogDomain',sep='/'),
                        file_refit = 'on_change')
@@ -754,10 +813,12 @@ ggsave('Subgroup_cogDomain_Posteriors.jpg', plot=cogDomain_model.posterior_plot,
 
 ## ---- Influence of Exercise Mode ----
 
+contrasts(global.exInfluence.studies$Ex.Mode.2) <- contr.orthonorm
+
 exMode_model <- update(overall_model, formula. = ~ . + Ex.Mode.2,
                     newdata=global.exInfluence.studies,
                     prior= c(overall_effect.priors, betaWeight_prior),
-                    iter = 5000, chains = 4, warmup=1000,
+                    iter = 10000, chains = 4, warmup=2000,
                     save_pars = save_pars(all=T), seed = 123,
                     file=paste(modelDir,'subgroup_exMode',sep='/'),
                     file_refit = 'on_change')
@@ -766,10 +827,10 @@ exMode_model <- update(overall_model, formula. = ~ . + Ex.Mode.2,
 summary(exMode_model)
 
 # plot posteriors
-exMode_model.post_samps <- posterior_samples(exMode_model, c('^b','^sd'))
+exMode_model.post_samps <- as_draws_df(exMode_model, variable=c('^b','^sd'), regex=T)
 
 exMode_model.betas <- exMode_model.post_samps %>% 
-  select(b_Intercept:b_Ex.Mode.2Walking)
+  select(b_Intercept:b_Ex.Mode.210)
 
 names(exMode_model.betas) <- levels(global.exInfluence.studies$Ex.Mode.2)
 
@@ -811,7 +872,7 @@ ggsave('Subgroup_exMode_Posteriors.jpg', plot=exMode_model.posterior_plot, path=
 testTime_model <- update(overall_model, formula. = ~ . + EffectTime.2,
                          newdata=global.exInfluence.studies,
                          prior= c(overall_effect.priors, betaWeight_prior),
-                         iter = 5000, chains = 4, warmup=1000,
+                         iter = 10000, chains = 4, warmup=2000,
                          save_pars = save_pars(all=T), seed = 123,
                          file=paste(modelDir,'subgroup_testTime',sep='/'),
                          file_refit = 'on_change')
@@ -864,7 +925,7 @@ ggsave('Subgroup_taskTime_Posteriors.jpg', plot=testTime_model.posterior_plot, p
 outcome_model <- update(overall_model, formula. = ~ . + DV.2,
                         newdata=global.exInfluence.studies,
                         prior= c(overall_effect.priors, betaWeight_prior),
-                        iter = 5000, chains = 4, warmup=1000,
+                        iter = 10000, chains = 4, warmup=2000,
                         save_pars = save_pars(all=T), seed = 123,
                         file=paste(modelDir,'subgroup_outcomeMeasure',sep='/'),
                         file_refit = 'on_change')
@@ -912,7 +973,7 @@ ggsave('Subgroup_outcomeMeasure_Posteriors.jpg', plot=outcome_model.posterior_pl
 task_model <- update(overall_model, formula. = ~ . + Task.2,
                          newdata=global.exInfluence.studies,
                          prior= c(overall_effect.priors, betaWeight_prior),
-                         iter = 5000, chains = 4, warmup=1000,
+                         iter = 10000, chains = 4, warmup=2000,
                          save_pars = save_pars(all=T), seed = 123,
                          file=paste(modelDir,'subgroup_task',sep='/'),
                          file_refit = 'on_change')
@@ -975,7 +1036,7 @@ gtsave(task_betas.gt_tbl,filename = 'Task_Beta_Weights.png', path=plotDir)
 duration_model <- update(overall_model, formula. = ~ . + Duration.2,
                          newdata=global.exInfluence.studies,
                          prior= c(overall_effect.priors, betaWeight_prior),
-                         iter = 5000, chains = 4, warmup=1000,
+                         iter = 10000, chains = 4, warmup=2000,
                          save_pars = save_pars(all=T), seed = 123,
                          file=paste(modelDir,'subgroup_duration',sep='/'),
                          file_refit = 'on_change')
@@ -1035,7 +1096,7 @@ ggsave('Subgroup_Duration_Posteriors.jpg', plot=duration_model.posterior_plot, p
 all_subgroups.model <- update(overall_model, formula. = ~ . + Ex.ACSM.2 + Domain.2 + Ex.Mode.2 + EffectTime.2,
                         newdata=global.exInfluence.studies,
                         prior= c(overall_effect.priors, betaWeight_prior),
-                        iter = 5000, chains = 4, warmup=1000,
+                        iter = 10000, chains = 4, warmup=2000,
                         save_pars = save_pars(all=T), seed = 123,
                         file=paste(modelDir,'all_subgroups',sep='/'),
                         file_refit = 'on_change')
@@ -1090,7 +1151,7 @@ gtsave(subgroup_models.gt_tbl,filename = 'Subgroup_Models_Comparison.png', path=
 intensity_cogDomain.model <- brm(g|se(g_se) ~ 1 + (1|Author/es.ids) + Ex.ACSM.2*Domain.2,
                                  data=global.exInfluence.studies,
                                  prior= c(overall_effect.priors, betaWeight_prior),
-                                 iter = 5000, chains = 4, warmup=1000,
+                                 iter = 10000, chains = 4, warmup=2000,
                                  save_pars = save_pars(all=T), seed = 123,
                                  file=paste(modelDir,'subgroup_intensity_x_cogDomain',sep='/'),
                                  file_refit = 'on_change')
@@ -1104,16 +1165,5 @@ intensity_cogDomain.model <- brm(g|se(g_se) ~ 1 + (1|Author/es.ids) + Ex.ACSM.2*
 # To get stable bayes factors, best to use 10000 iterations
 
 # Bayes factors approximated using the Savage-Dickey Ratio
-
-# to test the pooled effect in the meta-analysis model, 
-# have to make the intercept into a beta coefficient
-overall_model.2 <- brm(g|se(g_se) ~ 0 + Intercept +  (1|Author/es.ids),
-                       data=global.exInfluence.studies,
-                       prior= priors[-1,],
-                       iter = 10000, chains = 4, warmup=5000,
-                       save_pars = save_pars(all=T), seed = 123,
-                       file=paste(modelDir,'overall_model_2',sep='/'),
-                       file_refit = 'on_change')
-
-overall_model.bf <- bayesfactor_parameters(overall_model.2, null=0)
+overall_model.bf <- bayesfactor_parameters(overall_model, null=0)
 
