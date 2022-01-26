@@ -295,6 +295,8 @@ global.exInfluence.studies$Duration.2 <- factor(global.exInfluence.studies$Durat
                                                 levels = c('<=15', '20-27', '30-35', '40-45', '>60',
                                                            'task completion', 'volitional exhaustion', 'sets duration'))
 
+save(global.exInfluence.studies, file=paste(dataDir, 'global_exInfluence_effects.rds', sep='/'))
+
 
 ## ---- Plot Effects ----
 g.effects_plot <- ggplot(data=global.exInfluence.studies, aes(x=g, y=factor(ID), colour=DV.2)) +
@@ -700,11 +702,14 @@ ggsave('Overall_Forest_Plot.jpg', plot=overall_forest.plot, path=plotDir,
        units='in', width=13, height=7)
 
 
-## ---- Meta-Regression ----
+## ---- Subgroup Analyses ----
 
 ## ---- Exercise Intensity ----
 
 # Influence of exercise Intensity
+
+contrasts(global.exInfluence.studies$Ex.ACSM.2) <- contr.orthonorm
+
 exIntensity.model <- update(overall_model, formula. = ~ . + Ex.ACSM.2,
                             newdata = global.exInfluence.studies,
                             prior = priors, iter = 10000, chains = 4, warmup=2000,
@@ -759,6 +764,7 @@ ggsave('Subgroup_exIntensity_Posteriors.jpg', plot=intensity_model.posterior_plo
        units='in', width=5, height=7)
 
 ## ---- Influence of Cognitive Domain ----
+contrasts(global.exInfluence.studies$Domain.2) <- contr.orthonorm
 
 cogDomain_model <- update(overall_model, formula. = ~ . + Domain.2,
                        newdata=global.exInfluence.studies,
@@ -812,7 +818,6 @@ ggsave('Subgroup_cogDomain_Posteriors.jpg', plot=cogDomain_model.posterior_plot,
 
 
 ## ---- Influence of Exercise Mode ----
-
 contrasts(global.exInfluence.studies$Ex.Mode.2) <- contr.orthonorm
 
 exMode_model <- update(overall_model, formula. = ~ . + Ex.Mode.2,
@@ -869,6 +874,8 @@ ggsave('Subgroup_exMode_Posteriors.jpg', plot=exMode_model.posterior_plot, path=
        units='in', width=5, height=4)
 
 ## ---- Influence of Test Time on Effect ----
+contrasts(global.exInfluence.studies$EffectTime.2) <- contr.orthonorm
+
 testTime_model <- update(overall_model, formula. = ~ . + EffectTime.2,
                          newdata=global.exInfluence.studies,
                          prior= c(overall_effect.priors, betaWeight_prior),
@@ -921,6 +928,7 @@ ggsave('Subgroup_taskTime_Posteriors.jpg', plot=testTime_model.posterior_plot, p
 
 
 ## ---- RT vs Accuracy ----
+contrasts(global.exInfluence.studies$DV.2) <- contr.orthonorm
 
 outcome_model <- update(overall_model, formula. = ~ . + DV.2,
                         newdata=global.exInfluence.studies,
@@ -969,6 +977,7 @@ ggsave('Subgroup_outcomeMeasure_Posteriors.jpg', plot=outcome_model.posterior_pl
 
 ## ---- Task ----
 # Note: few effects for each task. May be too fine grained of an analysis
+contrasts(global.exInfluence.studies$Task.2) <- contr.orthonorm
 
 task_model <- update(overall_model, formula. = ~ . + Task.2,
                          newdata=global.exInfluence.studies,
@@ -1032,6 +1041,7 @@ gtsave(task_betas.gt_tbl,filename = 'Task_Beta_Weights.png', path=plotDir)
 
 
 ## ---- Exercise Duration ----
+contrasts(global.exInfluence.studies$Duration.2) <- contr.orthonorm
 
 duration_model <- update(overall_model, formula. = ~ . + Duration.2,
                          newdata=global.exInfluence.studies,
@@ -1105,48 +1115,6 @@ summary(all_subgroups.model)
 
 
 
-## ---- Model Comparisons ----
-
-
-subgroup_models.list <- list('Intercept'= overall_model, 'Exercise Intensity'=exIntensity.model, 
-                             'Cognitive Domain'=cogDomain_model, 'Exercise Type' = exMode_model, 
-                             'Task Time' = testTime_model, 'Outcome Measure' = outcome_model, 
-                             'Full' = all_subgroups.model)
-
-
-# compare to an Intercept only model. 
-# ELPD = expected log predictive density, where higher values are better
-
-# leave one out cross validation 
-subgroup_models.loos <- lapply(subgroup_models.list, loo)
-
-
-# bayes factor
-subgroup_models.bfs <- sapply(subgroup_models.list,
-                              function(x){
-                                bayes_factor(x, overall_model)$bf
-                              })
-
-subgroup_models.compare <- as.data.frame(loo_compare(subgroup_models.loos))
-
-subgroup_models.compare <- subgroup_models.compare %>% rownames_to_column()
-
-
-subgroup_models.bfs[1] <- 0
-
-subgroup_models.compare['BF10'] <- subgroup_models.bfs
-
-subgroup_models.gt_tbl <- gt(subgroup_models.compare[,c(1:3,10)],rowname_col = 'rowname') %>% 
-  fmt_number(columns=c(2,3), decimals=2) %>% 
-  fmt_scientific(columns=4, decimals=2) %>% 
-  tab_header(
-    title = md('**Subgroup Analysis Model Comparison**'),
-  ) %>% 
-  cols_label(elpd_diff='ELPD Diff', se_diff = 'SE Diff', BF10 = md('BF<sub>10</sub>'))
-
-gtsave(subgroup_models.gt_tbl,filename = 'Subgroup_Models_Comparison.png', path=plotDir)
-
-
 # ---- Interaction of Intensity and Domain ----
 intensity_cogDomain.model <- brm(g|se(g_se) ~ 1 + (1|Author/es.ids) + Ex.ACSM.2*Domain.2,
                                  data=global.exInfluence.studies,
@@ -1157,13 +1125,5 @@ intensity_cogDomain.model <- brm(g|se(g_se) ~ 1 + (1|Author/es.ids) + Ex.ACSM.2*
                                  file_refit = 'on_change')
 
 
-# ---- Hypothesis Testing and Model Comparisons ----
 
-# use bayes factors to determine the amount of evidence for model parameters to be different from 0
-# use WAIC to do model comparison, then test model parameters using bayes factors
-
-# To get stable bayes factors, best to use 10000 iterations
-
-# Bayes factors approximated using the Savage-Dickey Ratio
-overall_model.bf <- bayesfactor_parameters(overall_model, null=0)
 
