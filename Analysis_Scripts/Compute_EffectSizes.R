@@ -106,7 +106,7 @@ es.var <- function(design,cond1.n,cond2.n,smd){
 parentDir <- getwd()
 dataDir <- file.path(parentDir,'Data')
 
-setwd(dataDir)
+#setwd(dataDir)
 
 #gs4_auth(email = 'jordangarrett@ucsb.edu')
 #sheet_link <- 'https://docs.google.com/spreadsheets/d/1I7TtqSe9-p8RNyXuS_DJw3f0KmSOWysx9_lxFKaNSLM/edit#gid=0'
@@ -196,7 +196,21 @@ standardized it by the within-group standard deviation.
 
 
 McMorris et al., 2011, Moreau & Chou, 2019, and  also used the 
-same approach described above for pre/post designs. "
+same approach described above for pre/post designs. 
+
+
+*Converting Cohen's d to Pearson's r for Tad:
+r = d/sqrt(d^2+a)
+
+where a is a correction factor for cases when n_1 != n_2:
+
+a = (n_1 + n_2)^2/(n_1*n_2)
+
+and
+
+V_r = (a^2*V_d)/(d^2+a)^3
+
+"
 
 
 allExLevel.cols <- which(grepl('Ex Level [[:digit:]]$',names(allStudy_data.filt1)) == T)
@@ -274,17 +288,17 @@ for (iRow in seq(nrow(pre_post.studies.df))){
   # -- Special Cases --
   if (study_data$`Article ID` == 13){
     # Task 1
-    pre_post_diff.1 <- (study_data$`Ex Level 2 Mean...39`[[1]] - study_data$`Ex Level 1 Mean...37`[[1]]) 
+    pre_post_diff.1 <- (as.numeric(study_data$`Ex Level 2 Mean...39`[[1]]) - as.numeric(study_data$`Ex Level 1 Mean...37`[[1]])) 
     
-    pre.sd.1 <- study_data$`Ex Level 1 SD...38`[[1]]
+    pre.sd.1 <- as.numeric(study_data$`Ex Level 1 SD...38`[[1]])
     
     standardized.diff.1 <- pre_post_diff.1 / pre.sd.1
     diff.var.1 <- es.var(design, condLevels.n[[2]], condLevels.n[[2]], standardized.diff.1)
     
     # Task 2
-    pre_post_diff.2 <- (study_data$`Ex Level 2 Mean...53`[[1]] - study_data$`Ex Level 1 Mean...51`[[1]]) 
+    pre_post_diff.2 <- (as.numeric(study_data$`Ex Level 2 Mean...53`[[1]]) - as.numeric(study_data$`Ex Level 1 Mean...51`[[1]]))
     
-    pre.sd.2 <- study_data$`Ex Level 1 SD...52`[[1]]
+    pre.sd.2 <- as.numeric(study_data$`Ex Level 1 SD...52`[[1]])
     
     standardized.diff.2 <- pre_post_diff.2/  pre.sd.2
     
@@ -299,8 +313,14 @@ for (iRow in seq(nrow(pre_post.studies.df))){
     ex_levelName.idx <- c(17,17)
     rest_levelName.idx <- c(13,13)
     
+    
+    a <- ((study.n + study.n)^2)/(study.n * study.n)
+    corr.es <- standardized.diff / sqrt(standardized.diff^2 + a)
+    
+    corr.se <- ((a^2)*standardized.diff_se)/((standardized.diff^2 + a)^3)
+    
     study_effects.mat <- cbind(ex_levelName.idx,rest_levelName.idx,study.n,task_name.idx,standardized.diff,
-                                 standardized.diff_se,post.labels)
+                                 standardized.diff_se,post.labels, corr.es, corr.se)
     
   } else if (study_data$`Article ID` == 79) {
     
@@ -330,7 +350,7 @@ for (iRow in seq(nrow(pre_post.studies.df))){
     
     rest.sds <- unlist(study_data[rest_taskMean.cols_idx+1])
     
-    standardized.diff <- (ex.means-rest.means)/rest.sds
+    standardized.diff <- (as.numeric(ex.means)-as.numeric(rest.means))/as.numeric(rest.sds)
     
     study.n <- condLevels.n[[2]]
     
@@ -344,8 +364,12 @@ for (iRow in seq(nrow(pre_post.studies.df))){
     ex_levelName.idx <- rep(17,length(post.labels))
     rest_levelName.idx <- rep(13, length(post.labels))
     
+    a <- (study.n + study.n)^2 / (study.n * study.n)
+    corr.es <- standardized.diff / sqrt(standardized.diff^2 + a)
+    corr.se <- ((a^2)*standardized.diff_se) / ((standardized.diff^2 + a)^3)
+    
     study_effects.mat <- cbind(ex_levelName.idx,rest_levelName.idx,study.n,task_name.idx,standardized.diff,
-                               standardized.diff_se,post.labels)
+                               standardized.diff_se,post.labels, corr.es, corr.se)
     
     
   } else if (study_data$`Article ID` == 51){
@@ -365,28 +389,29 @@ for (iRow in seq(nrow(pre_post.studies.df))){
     
     n_outcomes <- length(exLevel.1_meanCols.idx)
     
-    task_means <- unlist(study_data[mean_cols.idx])
-    task_sds <- unlist(study_data[mean_cols.idx+1])
+    non_rest.means_idx <- setdiff(mean_cols.idx, exLevel.1_meanCols.idx)
     
-    # measures of interest are every 2 means, and every 4 sds
-    task_means <- task_means[seq(2,length(task_means),by=2)]
-    task_sds <- task_sds[seq(2,length(task_sds),by=4)]
+    task_means <- as.numeric(unlist(study_data[non_rest.means_idx]))
+    task_sds <- as.numeric(unlist(study_data[non_rest.means_idx+1]))
+    
+    control_means <- as.numeric(unlist(study_data[exLevel.1_meanCols.idx]))
+    control_sds <- as.numeric(unlist(study_data[exLevel.1_meanCols.idx+1]))
     
     w.size <- 2
     w.start <- 1
-    sd.cnt <- 1
+    control.cnt <- 1
     standardized.diff <- c()
-    while(w.start < length(task_means)){
+    while(w.start+w.size <= length(task_means)){
       w.end <- w.start + w.size
       
-      current_taskMeans <- task_means[w.start:(w.end-1)]
-      current_taskSd.pre <- task_sds[sd.cnt]
+      current_taskMeans <- task_means[w.start:w.end]
+      current_taskSd.pre <- control_sds[control.cnt]
       
-      smd <- (current_taskMeans[2] - current_taskMeans[1])/current_taskSd.pre
+      smd <- (current_taskMeans - control_means[control.cnt])/current_taskSd.pre
       
       standardized.diff <- append(standardized.diff, smd)
-      w.start <- w.start + w.end
-      sd.cnt <- sd.cnt + 1
+      w.start <- w.end + 1
+      control.cnt <- control.cnt + 1
     }
     
     study.n <- condLevels.n[[2]]
@@ -398,8 +423,13 @@ for (iRow in seq(nrow(pre_post.studies.df))){
     ex_levelName.idx <- rep(17,length(standardized.diff))
     post.labels <- rep('post',length(ex_levelName.idx))
     
+    a <- ((study.n + study.n)^2)/(study.n * study.n)
+    corr.es <- standardized.diff / sqrt(standardized.diff^2 + a)
+    
+    corr.se <- ((a^2)*standardized.diff_se)/((standardized.diff^2 + a)^3)
+    
     study_effects.mat <- cbind(ex_levelName.idx,ex_levelName.idx, study.n,task_name.idx,standardized.diff,
-          standardized.diff_se,post.labels)
+          standardized.diff_se,post.labels, corr.es, corr.se)
     
   }
   else if (any(grepl('rest', condLevels, ignore.case=T))){ # Studies with rest condition
@@ -517,13 +547,16 @@ for (iRow in seq(nrow(pre_post.studies.df))){
       rest_levelName.idx <- which(names(study_data) == rest_levelName)
       ex_levelName.idx <- which(names(study_data) == ex_levelName)
       
+      a <- ((rest_con.n + ex_con.n)^2) / (rest_con.n*ex_con.n)
+      corr.es <- standardized.diff / sqrt(standardized.diff^2 + a)
+      corr.se <- ((a^2)*standardized.diff_se) / ((standardized.diff^2 + a)^3)
+      
       # store effects
       current_taskEffects <- cbind(ex_levelName.idx, rest_levelName.idx, study.n,task_name.idx,standardized.diff,
-                                   standardized.diff_se,post.labels)
+                                   standardized.diff_se,post.labels, corr.es, corr.se)
       
       study_effects.mat <- rbind(study_effects.mat, current_taskEffects)
     }
-    
     
     
   } else {
@@ -587,9 +620,13 @@ for (iRow in seq(nrow(pre_post.studies.df))){
       
       ex_levelName.idx <- which(names(study_data) == ex_levelName)
       
+      a <- 4 # since within subjects have equal sample sizes
+      corr.es <- standardized.diff / sqrt(standardized.diff^2 + a)
+      corr.se <- ((a^2)*standardized.diff_se)/((standardized.diff^2 + a)^3)
+      
       # store effects
       current_taskEffects <- cbind(ex_levelName.idx,ex_levelName.idx, study.n,task_name.idx,standardized.diff,
-                                   standardized.diff_se,post.labels)
+                                   standardized.diff_se,post.labels, corr.es, corr.se)
       
       study_effects.mat <- rbind(study_effects.mat, current_taskEffects)
       
@@ -690,10 +727,10 @@ for (iRow in seq(nrow(pre_post.studies.df))){
                                  'DV' = dependent_variables,
                                  'SMD' = as.numeric(study_effects.mat[,5]),
                                  'SMD_SE' = as.numeric(study_effects.mat[,6]),
-                                 'Effect_N' = as.numeric(study_effects.mat[,3]))
-  
-  
-  
+                                 'Effect_N' = as.numeric(study_effects.mat[,3]),
+                                 'r' = as.numeric(study_effects.mat[,8]),
+                                 'r_se' = as.numeric(study_effects.mat[,9])
+                                 )
   
   pre_post_effects.df <- rbind(pre_post_effects.df,study_effects.df)
   
@@ -849,6 +886,9 @@ for (iRow in 1:nrow(during.studies.df)){
       
       standardized.diff_se <- sqrt(diff.var)
       
+      a <- ((rest_con.n + ex_con.n)^2) / (rest_con.n*ex_con.n)
+      corr.es <- standardized.diff / sqrt(standardized.diff^2 + a)
+      corr.se <- (a^2)*standardized.diff_se / ((standardized.diff^2 + a)^3)
       
       # additional data
       study.n <-  rep(study.n, length(standardized.diff))
@@ -862,7 +902,8 @@ for (iRow in 1:nrow(during.studies.df)){
       
       # store effects
       current_taskEffects <- cbind(ex_levelName.idx,rest_levelName.idx,study.n,task_name.idx,
-                                   standardized.diff,standardized.diff_se,during.labels)
+                                   standardized.diff,standardized.diff_se,during.labels,
+                                   corr.es, corr.se)
       
       study_effects.mat <- rbind(study_effects.mat, current_taskEffects)
       
@@ -967,10 +1008,15 @@ for (iRow in 1:nrow(during.studies.df)){
           
           standardized.diff_se <- sqrt(diff.var)
           
+          a <- ((current_con.n + comp_con.n)^2) / (current_con.n * comp_con.n)
+          corr.es <- standardized.diff / sqrt(standardized.diff^2 + a)
+          corr.se <- ((a^2)*standardized.diff_se) / ((standardized.diff^2 + a)^3)
+          
           
           # store effects
           current_taskEffects <- cbind(current_con.name_idx,comp_con.name_idx, study.n,
-                                       task_name.idx,standardized.diff, standardized.diff_se,during.labels)
+                                       task_name.idx,standardized.diff, standardized.diff_se,during.labels,
+                                       corr.es, corr.se)
           
           study_effects.mat <- rbind(study_effects.mat, current_taskEffects)
         
@@ -1061,7 +1107,6 @@ for (iRow in 1:nrow(during.studies.df)){
   
   overall.n <- rep(study_data$N, nrow(study_effects.mat))
   
-  
   study_effects.df <- data.frame('ID'= ids,
                                  'Author'= author,
                                  'Year' = year,
@@ -1083,12 +1128,14 @@ for (iRow in 1:nrow(during.studies.df)){
                                  'DV' = dependent_variables,
                                  'SMD' = as.numeric(study_effects.mat[,5]),
                                  'SMD_SE' = as.numeric(study_effects.mat[,6]),
-                                 'Effect_N' = as.numeric(study_effects.mat[,3]))
+                                 'Effect_N' = as.numeric(study_effects.mat[,3]),
+                                 'r' = as.numeric(study_effects.mat[,8]),
+                                 'r_se' = as.numeric(study_effects.mat[,9])
+                                 )
   
   during_effects.df <- rbind(during_effects.df, study_effects.df)
   
 }
-
 
 
 ## ---- Post Data ----
@@ -1235,6 +1282,10 @@ for (iRow in 1:nrow(post.studies.df)){
       
       standardized.diff_se <- sqrt(diff.var)
       
+      a <- ((rest_con.n + ex_con.n)^2) / (rest_con.n*ex_con.n)
+      corr.es <- standardized.diff / sqrt(standardized.diff^2 + a)
+      corr.se <- ((a^2)*standardized.diff_se) / ((standardized.diff^2 + a)^3)
+      
       
       # additional data
       study.n <-  rep(study.n, length(standardized.diff))
@@ -1248,7 +1299,8 @@ for (iRow in 1:nrow(post.studies.df)){
       
       # store effects
       current_taskEffects <- cbind(ex_levelName.idx,rest_levelName.idx,study.n,task_name.idx,
-                                   standardized.diff,standardized.diff_se,post.labels)
+                                   standardized.diff,standardized.diff_se,post.labels,
+                                   corr.es, corr.es)
       
       study_effects.mat <- rbind(study_effects.mat, current_taskEffects)
       
@@ -1349,10 +1401,14 @@ for (iRow in 1:nrow(post.studies.df)){
           
           standardized.diff_se <- sqrt(diff.var)
           
-          
+          a <- ((current_con.n + comp_con.n)^2) / (current_con.n * comp_con.n)
+          corr.es <- standardized.diff / sqrt(standardized.diff^2 + a)
+          corr.se <- ((a^2)*standardized.diff) / ((standardized.diff^2 + a)^3)
+        
           # store effects
           current_taskEffects <- cbind(current_con.name_idx,comp_con.name_idx, study.n,
-                                       task_name.idx,standardized.diff, standardized.diff_se,post.labels)
+                                       task_name.idx,standardized.diff, standardized.diff_se,post.labels,
+                                       corr.es, corr.se)
           
           study_effects.mat <- rbind(study_effects.mat, current_taskEffects)
           
@@ -1464,7 +1520,10 @@ for (iRow in 1:nrow(post.studies.df)){
                                  'DV' = dependent_variables,
                                  'SMD' = as.numeric(study_effects.mat[,5]),
                                  'SMD_SE' = as.numeric(study_effects.mat[,6]),
-                                 'Effect_N' = as.numeric(study_effects.mat[,3]))
+                                 'Effect_N' = as.numeric(study_effects.mat[,3]),
+                                 'r' = as.numeric(study_effects.mat[,8]),
+                                 'r_se' = as.numeric(study_effects.mat[,9])
+                                 )
   
   post_effects.df <- rbind(post_effects.df, study_effects.df)
   

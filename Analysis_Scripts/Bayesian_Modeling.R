@@ -295,7 +295,9 @@ global.exInfluence.studies$Duration.2 <- factor(global.exInfluence.studies$Durat
                                                 levels = c('<=15', '20-27', '30-35', '40-45', '>60',
                                                            'task completion', 'volitional exhaustion', 'sets duration'))
 
-save(global.exInfluence.studies, file=paste(dataDir, 'global_exInfluence_effects.rds', sep='/'))
+saveRDS(global.exInfluence.studies, file='global_exInfluence_effects.rds')
+
+global.exInfluence.studies <- readRDS('global_exInfluence_effects.rds')
 
 
 ## ---- Plot Effects ----
@@ -1096,9 +1098,6 @@ duration_model.posterior_plot <- ggplot(data = duration_model.betas, aes(x = bet
 
 ggsave('Subgroup_Duration_Posteriors.jpg', plot=duration_model.posterior_plot, path=plotDir,
        units='in', width=5, height=4)
-
-
-
 
 
 ## ---- Full Subgroup Model ----
