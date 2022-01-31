@@ -106,7 +106,7 @@ es.var <- function(design,cond1.n,cond2.n,smd){
 parentDir <- getwd()
 dataDir <- file.path(parentDir,'Data')
 
-#setwd(dataDir)
+setwd(dataDir)
 
 #gs4_auth(email = 'jordangarrett@ucsb.edu')
 #sheet_link <- 'https://docs.google.com/spreadsheets/d/1I7TtqSe9-p8RNyXuS_DJw3f0KmSOWysx9_lxFKaNSLM/edit#gid=0'
