@@ -106,7 +106,7 @@ es.var <- function(design,cond1.n,cond2.n,smd){
 parentDir <- getwd()
 dataDir <- file.path(parentDir,'Data')
 
-setwd(dataDir)
+#setwd(dataDir)
 
 #gs4_auth(email = 'jordangarrett@ucsb.edu')
 #sheet_link <- 'https://docs.google.com/spreadsheets/d/1I7TtqSe9-p8RNyXuS_DJw3f0KmSOWysx9_lxFKaNSLM/edit#gid=0'
@@ -315,9 +315,9 @@ for (iRow in seq(nrow(pre_post.studies.df))){
     
     
     a <- ((study.n + study.n)^2)/(study.n * study.n)
-    corr.es <- standardized.diff / sqrt(standardized.diff^2 + a)
+    corr.es <- standardized.diff / sqrt((standardized.diff^2) + a)
     
-    corr.se <- ((a^2)*standardized.diff_se)/((standardized.diff^2 + a)^3)
+    corr.se <- ((a^2)*standardized.diff_se)/(((standardized.diff^2) + a)^3)
     
     study_effects.mat <- cbind(ex_levelName.idx,rest_levelName.idx,study.n,task_name.idx,standardized.diff,
                                  standardized.diff_se,post.labels, corr.es, corr.se)
@@ -366,7 +366,7 @@ for (iRow in seq(nrow(pre_post.studies.df))){
     
     a <- (study.n + study.n)^2 / (study.n * study.n)
     corr.es <- standardized.diff / sqrt(standardized.diff^2 + a)
-    corr.se <- ((a^2)*standardized.diff_se) / ((standardized.diff^2 + a)^3)
+    corr.se <- ((a^2)*standardized.diff_se) / (((standardized.diff^2) + a)^3)
     
     study_effects.mat <- cbind(ex_levelName.idx,rest_levelName.idx,study.n,task_name.idx,standardized.diff,
                                standardized.diff_se,post.labels, corr.es, corr.se)
@@ -426,7 +426,7 @@ for (iRow in seq(nrow(pre_post.studies.df))){
     a <- ((study.n + study.n)^2)/(study.n * study.n)
     corr.es <- standardized.diff / sqrt(standardized.diff^2 + a)
     
-    corr.se <- ((a^2)*standardized.diff_se)/((standardized.diff^2 + a)^3)
+    corr.se <- ((a^2)*standardized.diff_se)/(((standardized.diff^2) + a)^3)
     
     study_effects.mat <- cbind(ex_levelName.idx,ex_levelName.idx, study.n,task_name.idx,standardized.diff,
           standardized.diff_se,post.labels, corr.es, corr.se)
@@ -549,7 +549,7 @@ for (iRow in seq(nrow(pre_post.studies.df))){
       
       a <- ((rest_con.n + ex_con.n)^2) / (rest_con.n*ex_con.n)
       corr.es <- standardized.diff / sqrt(standardized.diff^2 + a)
-      corr.se <- ((a^2)*standardized.diff_se) / ((standardized.diff^2 + a)^3)
+      corr.se <- ((a^2)*standardized.diff_se) / (((standardized.diff^2) + a)^3)
       
       # store effects
       current_taskEffects <- cbind(ex_levelName.idx, rest_levelName.idx, study.n,task_name.idx,standardized.diff,
@@ -622,7 +622,7 @@ for (iRow in seq(nrow(pre_post.studies.df))){
       
       a <- 4 # since within subjects have equal sample sizes
       corr.es <- standardized.diff / sqrt(standardized.diff^2 + a)
-      corr.se <- ((a^2)*standardized.diff_se)/((standardized.diff^2 + a)^3)
+      corr.se <- ((a^2)*standardized.diff_se)/(((standardized.diff^2) + a)^3)
       
       # store effects
       current_taskEffects <- cbind(ex_levelName.idx,ex_levelName.idx, study.n,task_name.idx,standardized.diff,
@@ -704,6 +704,10 @@ for (iRow in seq(nrow(pre_post.studies.df))){
   effect.time <- study_effects.mat[,7]
   
   overall.n <- rep(study_data$N, nrow(study_effects.mat))
+  
+  if(any(study_effects.mat[,9] < 0)){
+    foo <- 0
+  }
   
   
   study_effects.df <- data.frame('ID'= ids,
@@ -888,7 +892,7 @@ for (iRow in 1:nrow(during.studies.df)){
       
       a <- ((rest_con.n + ex_con.n)^2) / (rest_con.n*ex_con.n)
       corr.es <- standardized.diff / sqrt(standardized.diff^2 + a)
-      corr.se <- (a^2)*standardized.diff_se / ((standardized.diff^2 + a)^3)
+      corr.se <- (a^2)*standardized.diff_se / (((standardized.diff^2) + a)^3)
       
       # additional data
       study.n <-  rep(study.n, length(standardized.diff))
@@ -1010,7 +1014,7 @@ for (iRow in 1:nrow(during.studies.df)){
           
           a <- ((current_con.n + comp_con.n)^2) / (current_con.n * comp_con.n)
           corr.es <- standardized.diff / sqrt(standardized.diff^2 + a)
-          corr.se <- ((a^2)*standardized.diff_se) / ((standardized.diff^2 + a)^3)
+          corr.se <- ((a^2)*standardized.diff_se) / (((standardized.diff^2) + a)^3)
           
           
           # store effects
@@ -1106,6 +1110,10 @@ for (iRow in 1:nrow(during.studies.df)){
   effect.time <- study_effects.mat[,7]
   
   overall.n <- rep(study_data$N, nrow(study_effects.mat))
+  
+  if(any(study_effects.mat[,9] < 0)){
+    foo <- 0
+  }
   
   study_effects.df <- data.frame('ID'= ids,
                                  'Author'= author,
@@ -1284,7 +1292,7 @@ for (iRow in 1:nrow(post.studies.df)){
       
       a <- ((rest_con.n + ex_con.n)^2) / (rest_con.n*ex_con.n)
       corr.es <- standardized.diff / sqrt(standardized.diff^2 + a)
-      corr.se <- ((a^2)*standardized.diff_se) / ((standardized.diff^2 + a)^3)
+      corr.se <- ((a^2)*standardized.diff_se) / (((standardized.diff^2) + a)^3)
       
       
       # additional data
@@ -1300,7 +1308,7 @@ for (iRow in 1:nrow(post.studies.df)){
       # store effects
       current_taskEffects <- cbind(ex_levelName.idx,rest_levelName.idx,study.n,task_name.idx,
                                    standardized.diff,standardized.diff_se,post.labels,
-                                   corr.es, corr.es)
+                                   corr.es, corr.se)
       
       study_effects.mat <- rbind(study_effects.mat, current_taskEffects)
       
@@ -1403,7 +1411,7 @@ for (iRow in 1:nrow(post.studies.df)){
           
           a <- ((current_con.n + comp_con.n)^2) / (current_con.n * comp_con.n)
           corr.es <- standardized.diff / sqrt(standardized.diff^2 + a)
-          corr.se <- ((a^2)*standardized.diff) / ((standardized.diff^2 + a)^3)
+          corr.se <- ((a^2)*standardized.diff) / (((standardized.diff^2) + a)^3)
         
           # store effects
           current_taskEffects <- cbind(current_con.name_idx,comp_con.name_idx, study.n,
@@ -1497,7 +1505,6 @@ for (iRow in 1:nrow(post.studies.df)){
   effect.time <- study_effects.mat[,7]
   
   overall.n <- rep(study_data$N, nrow(study_effects.mat))
-  
   
   study_effects.df <- data.frame('ID'= ids,
                                  'Author'= author,

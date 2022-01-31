@@ -20,6 +20,7 @@ library(reshape2)
 
 parentDir <- getwd()
 dataDir <- file.path(parentDir,'Data')
+modelDir <- file.path(parentDir,'Models')
 setwd(dataDir)
 
 # Load data
@@ -81,22 +82,19 @@ acc_data <- global.exInfluence.studies %>%
 
 # ---- Modeling ----
 
-priors <- c(prior(normal(0,1), class=Intercept),
+priors <- c(prior(normal(0,.33), class=b, coef=Intercept),
                            prior(normal(0,1), class=b),
                            prior(cauchy(0,0.5), class=sd))
 
 hdi_width = .89
 
 
-
-
-
-acc.model <- brm(g|se(g_se) ~ 1 + (1|Author/es.ids) + Duration.3,
-                 data=global.exInfluence.studies,
-                 prior=overall_effect.priors,
-                 iter = 10000, chains = 4, warmup=2000,
+acc.model <- brm(r|se(r_se) ~ 0 + Intercept + (1|Author/es.ids) + Duration.3,
+                 data=acc_data,
+                 prior= priors,
+                 iter = 5000, chains = 4, warmup=1000,
                  save_pars = save_pars(all=T), seed = 123,
-                 file=paste(modelDir,'overall_random',sep='/'),
+                 file=paste(modelDir,'tad_grace_acc',sep='/'),
                  file_refit = 'on_change')
 
 
