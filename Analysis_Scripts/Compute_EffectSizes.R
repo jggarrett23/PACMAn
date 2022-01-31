@@ -1411,8 +1411,8 @@ for (iRow in 1:nrow(post.studies.df)){
           
           a <- ((current_con.n + comp_con.n)^2) / (current_con.n * comp_con.n)
           corr.es <- standardized.diff / sqrt(standardized.diff^2 + a)
-          corr.se <- ((a^2)*standardized.diff) / (((standardized.diff^2) + a)^3)
-        
+          corr.se <- ((a^2)*standardized.diff_se) / (((standardized.diff^2) + a)^3)
+          
           # store effects
           current_taskEffects <- cbind(current_con.name_idx,comp_con.name_idx, study.n,
                                        task_name.idx,standardized.diff, standardized.diff_se,post.labels,
