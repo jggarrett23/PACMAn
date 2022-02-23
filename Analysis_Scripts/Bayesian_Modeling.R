@@ -295,6 +295,9 @@ global.exInfluence.studies$Duration.2 <- factor(global.exInfluence.studies$Durat
                                                 levels = c('<=15', '20-27', '30-35', '40-45', '>60',
                                                            'task completion', 'volitional exhaustion', 'sets duration'))
 
+global.exInfluence.studies$ID <- factor(global.exInfluence.studies$ID)
+
+
 saveRDS(global.exInfluence.studies, file='global_exInfluence_effects.rds')
 
 global.exInfluence.studies <- readRDS('global_exInfluence_effects.rds')
@@ -359,10 +362,10 @@ across studies. More advantageous since we do not have to assume a correlation
 between effect sizes. 
 
 "
-overall_model <- brm(g|se(g_se) ~ 1 + (1|Author/es.ids),
+overall_model <- brm(g|se(g_se) ~ 1 + (1|ID/es.ids),
                      data=global.exInfluence.studies,
                      prior=overall_effect.priors,
-                     iter = 10000, chains = 4, warmup=2000,
+                     iter = 10000, chains = 4, cores=4, warmup=2000,
                      save_pars = save_pars(all=T), seed = 123,
                      file=paste(modelDir,'overall_random',sep='/'),
                      file_refit = 'on_change')
@@ -387,36 +390,37 @@ overall_model.post_hdi <- mode_hdi(overall_model.post_samps, .width=hdi_width)
 
 overall.mu_plot <- ggplot(data = overall_model.post_samps, aes(x = g)) +
   geom_density(fill = "lightblue",                # set the color
-               color = "black", alpha = 0.5, size=0.73) +  
-  stat_pointinterval(point_interval = mean_hdi, .width = hdi_width, 
+               color = "black", alpha = 0.5, size=1) +  
+  stat_pointinterval(point_interval = mode_hdi, .width = hdi_width, 
                      size=1, point_size=2) +
-  labs(x = expression(mu),
+  labs(x = expression(paste("Hedge's ", italic(g))),
        y = 'Density',
-       title='Pooled Effect') +
+       title='Overall Effect') +
   theme_minimal() +
   theme(
     plot.title = element_text(size=9,hjust = 0.5),
     axis.line.x = element_line(colour="black",size=.4),
+    panel.grid.minor = element_blank(),
     axis.text = element_text(size=7,color='black'),
     axis.title = element_text(size=8,color='black')
   ) + 
-  annotate(geom='text', x=mean(overall_model.post_samps$g), y=.8,
+  annotate(geom='text', x=mean(overall_model.post_samps$g), y=2,
            label=paste(hdi_width*100,'% HDI',sep=''), size=2.5) +
   
   annotate(geom='text', x=overall_model.post_hdi$g,
-           y=0.35, label=sprintf('%.2f',overall_model.post_hdi$g), size=2.3, fontface=2) +
+           y=0.7, label=sprintf('%.2f',overall_model.post_hdi$g), size=2.3, fontface=2) +
   
   annotate(geom='text', x=overall_model.post_hdi$g.lower,
-           y=0.35, label=sprintf('%.2f',overall_model.post_hdi$g.lower), size=2.2) +
+           y=0.7, label=sprintf('%.2f',overall_model.post_hdi$g.lower), size=2.2) +
   
   annotate(geom='text', x=overall_model.post_hdi$g.upper,
-         y=0.35, label=sprintf('%.2f',overall_model.post_hdi$g.upper), size=2.2)
+         y=0.7, label=sprintf('%.2f',overall_model.post_hdi$g.upper), size=2.2)
 
 
 # between study heterogeneity
 overall.tau1_plot <- ggplot(aes(x = tau1), data = overall_model.post_samps) +
   geom_density(fill = "darkgreen",               # set the color
-               color = "black", alpha = 0.25, size=0.73) +  
+               color = "black", alpha = 0.25, size=1) +  
   stat_pointinterval(point_interval = mean_hdi, .width = .89, 
                      size=1, point_size=2) +        
   labs(x = expression({tau[Between]}),
@@ -426,26 +430,27 @@ overall.tau1_plot <- ggplot(aes(x = tau1), data = overall_model.post_samps) +
   theme(
     plot.title = element_text(size=9,hjust = 0.5),
     axis.line.x = element_line(colour="black",size=.4),
+    panel.grid.minor = element_blank(),
     axis.text = element_text(size=7,color='black'),
-    axis.title = element_text(size=8,color='black')
+    axis.title = element_text(size=9,color='black')
   ) + 
-  annotate(geom='text', x=mean(overall_model.post_samps$tau1), y=1.35,
+  annotate(geom='text', x=mean(overall_model.post_samps$tau1), y=1.5,
            label=paste(hdi_width*100,'% HDI',sep=''), size=2.5) +
   
   annotate(geom='text', x=overall_model.post_hdi$tau1,
-           y=.5, label=sprintf('%.2f',overall_model.post_hdi$tau1), size=2.3, fontface=2) +
+           y=.7, label=sprintf('%.2f',overall_model.post_hdi$tau1), size=2.3, fontface=2) +
   
   annotate(geom='text', x=overall_model.post_hdi$tau1.lower,
-           y=.5, label=sprintf('%.2f',overall_model.post_hdi$tau1.lower), size=2.2) +
+           y=.7, label=sprintf('%.2f',overall_model.post_hdi$tau1.lower), size=2.2) +
   
   annotate(geom='text', x=overall_model.post_hdi$tau1.upper,
-           y=.5, label=sprintf('%.2f',overall_model.post_hdi$tau1.upper), size=2.2)
+           y=.7, label=sprintf('%.2f',overall_model.post_hdi$tau1.upper), size=2.2)
 
 
 # within study heterogenity
 overall.tau2_plot <- ggplot(aes(x = tau2), data = overall_model.post_samps) +
   geom_density(fill = "lightgreen",               # set the color
-               color = "black", alpha = 0.7, size=0.73) +  
+               color = "black", alpha = 0.7, size=1) +  
   stat_pointinterval(point_interval = mean_hdi, .width = .89, 
                      size=1, point_size=2) +        
   labs(x = expression({tau[Within]}),
@@ -455,26 +460,35 @@ overall.tau2_plot <- ggplot(aes(x = tau2), data = overall_model.post_samps) +
   theme(
     plot.title = element_text(size=9,hjust = 0.5),
     axis.line.x = element_line(colour="black",size=.4),
+    panel.grid.minor = element_blank(),
     axis.text = element_text(size=7,color='black'),
-    axis.title = element_text(size=8,color='black')
+    axis.title = element_text(size=9,color='black')
   ) + 
-  annotate(geom='text', x=mean(overall_model.post_samps$tau2), y=1.5,
+  annotate(geom='text', x=mean(overall_model.post_samps$tau2), y=3,
            label=paste(hdi_width*100,'% HDI',sep=''), size=2.5) +
   
   annotate(geom='text', x=overall_model.post_hdi$tau2,
-           y=.6, label=sprintf('%.2f',overall_model.post_hdi$tau2), size=2.3, fontface=2) +
+           y=1.2, label=sprintf('%.2f',overall_model.post_hdi$tau2), size=2.3, fontface=2) +
   
   annotate(geom='text', x=overall_model.post_hdi$tau2.lower,
-           y=.6, label=sprintf('%.2f',overall_model.post_hdi$tau2.lower), size=2.2) +
+           y=1.2, label=sprintf('%.2f',overall_model.post_hdi$tau2.lower), size=2.2) +
   
   annotate(geom='text', x=overall_model.post_hdi$tau2.upper,
-           y=.6, label=sprintf('%.2f',overall_model.post_hdi$tau2.upper), size=2.2)
+           y=1.2, label=sprintf('%.2f',overall_model.post_hdi$tau2.upper), size=2.2)
 
 
 overall_plot <- grid.arrange(overall.mu_plot,overall.tau1_plot, overall.tau2_plot, ncol=3,
              top=textGrob('Overall Effect of Exercise on Cognition',
                           gp=gpar(fontsize=12,fontface=2)))
 
+ggsave('Overall_Model_mu.jpg', plot=overall.mu_plot, path=plotDir,
+       units='in', width=2.9, height=1.98)
+
+ggsave('Overall_Model_tau1.jpg', plot=overall.tau1_plot, path=plotDir,
+       units='in', width=2.9, height=1.98)
+
+ggsave('Overall_Model_tau2.jpg', plot=overall.tau2_plot, path=plotDir,
+       units='in', width=2.9, height=1.98)
 
 ggsave('Overall_Model_Posteriors.jpg', plot=overall_plot, path=plotDir,
        units='in', width=5, height=4)
@@ -524,7 +538,13 @@ funnel <- ggplot(global.exInfluence.studies, aes(x=g, y=g_se)) +
          y = 'Standard Error') +
   scale_y_reverse() + 
   theme_bw() +
-  theme(panel.grid = element_blank())
+  theme(panel.grid = element_blank(),
+        axis.text = element_text(size=10),
+        axis.title = element_text(size=12))
+
+ggsave('Funnel_Plot.jpg', plot = funnel, path=plotDir,
+       width=3.6, height=2.48)
+
 
 # Egger's Regression Test
 eggs.test <- global.exInfluence.studies %>% 
@@ -581,54 +601,57 @@ ggsave('Overall_Model_Posteriors_ECDF.jpg', plot=overall_effect.ecdf_plot, path=
 
 # calculate actual effect of each study by adding pooled effect size to estimate deviation
 
-study.draws <- spread_draws(overall_model, r_Author[Author,], b_Intercept) %>% 
-  mutate(b_Intercept = b_Intercept + r_Author)
+study.draws <- spread_draws(overall_model, r_ID[ID,], b_Intercept) %>% 
+  mutate(b_Intercept = b_Intercept + r_ID) %>% 
+  mutate(ID = factor(ID))
+
 
 overall_pooled_effect.draws <- spread_draws(overall_model, b_Intercept) %>% 
-  mutate(Author='Pooled Effect')
+  mutate(ID='Pooled Effect')
 
 
 overall.forest_data <- bind_rows(study.draws, overall_pooled_effect.draws) %>% 
   ungroup() %>% 
-  mutate(Author = str_replace_all(Author, "[.]", " ")) %>% 
-  mutate(Author = reorder(Author, b_Intercept)) 
+  mutate(ID = str_replace_all(ID, "[.]", " ")) %>% 
+  mutate(ID = reorder(ID, b_Intercept)) 
 
-overall.forest_data$group <- factor(ifelse(overall.forest_data$Author=='Pooled Effect',1,0))
+overall.forest_data$group <- factor(ifelse(overall.forest_data$ID=='Pooled Effect',1,0))
 
+overall.forest_data$ID <- factor(overall.forest_data$ID, ordered = F)
 
-overall.forest_data.summary <- group_by(overall.forest_data, Author) %>% 
-  mean_hdi(b_Intercept, .width=hdi_width)  
+overall.forest_data.summary <- group_by(overall.forest_data, ID) %>% 
+  mode_hdi(b_Intercept, .width=hdi_width)  
   
   
 first_half.studies <- overall.forest_data.summary %>% 
-  filter(Author != 'Pooled Effect') %>% 
+  filter(ID != 'Pooled Effect') %>% 
   filter(b_Intercept > median(b_Intercept))
 
 first_half.studies <- first_half.studies[order(first_half.studies$b_Intercept, decreasing=T),]
 
 second_half.studies <- overall.forest_data.summary %>% 
-  filter(Author != 'Pooled Effect') %>% 
+  filter(ID != 'Pooled Effect') %>% 
   filter(b_Intercept <= median(b_Intercept))
 
 second_half.studies <- second_half.studies[order(second_half.studies$b_Intercept, decreasing=T),]
 
 
-second_half.studies_bool <- sapply(second_half.studies$Author,
+second_half.studies_bool <- sapply(second_half.studies$ID,
                               function(x){
-                                !any(grepl(x,first_half.studies$Author))
+                                !any(grepl(x,first_half.studies$ID))
                               })
 second_half.studies <- second_half.studies[second_half.studies_bool, ]
 
 second_half.studies <- rbind(second_half.studies, 
-                             overall.forest_data.summary[which(overall.forest_data.summary$Author == 'Pooled Effect'),])
+                             overall.forest_data.summary[which(overall.forest_data.summary$ID == 'Pooled Effect'),])
 
 
 first_half.studies$group <- factor(0)
 second_half.studies$group <- factor(c(rep(0,nrow(second_half.studies)-1),1))
   
 first_half.forest_plot <- ggplot(data = overall.forest_data %>% 
-                                   filter(Author %in% first_half.studies$Author),
-       aes(x=b_Intercept, y=relevel(Author,'Pooled Effect',after=Inf),  fill=group)) +
+                                   filter(ID %in% first_half.studies$ID),
+       aes(x=b_Intercept, y=relevel(ID,'Pooled Effect',after=Inf),  fill=group)) +
   
   # Add vertical lines for pooled effect and CI
   geom_vline(xintercept = fixef(overall_model)[1, 1], 
@@ -661,8 +684,8 @@ first_half.forest_plot <- ggplot(data = overall.forest_data %>%
 
 
 second_half.forest_plot <- ggplot(data = overall.forest_data %>% 
-                                   filter(Author %in% second_half.studies$Author | Author == 'Pooled Effect'), 
-                                 aes(x=b_Intercept, y=relevel(Author,'Pooled Effect', after=Inf), fill=group)) +
+                                   filter(ID %in% second_half.studies$ID | ID == 'Pooled Effect'), 
+                                 aes(x=b_Intercept, y=relevel(ID,'Pooled Effect', after=Inf), fill=group)) +
   
   # Add vertical lines for pooled effect and CI
   geom_vline(xintercept = fixef(overall_model)[1, 1], 
@@ -698,6 +721,13 @@ second_half.forest_plot <- ggplot(data = overall.forest_data %>%
 overall_forest.plot <- grid.arrange(first_half.forest_plot, second_half.forest_plot, ncol=2,
                                     top=textGrob(label='Study Contribution to Pooled Effect',
                                                  gp=gpar(fontsize=20,fontface=2)))
+
+
+ggsave('First_Half_Forest.jpg', plot=first_half.forest_plot, path=plotDir,
+       units='in', width=8, height=10.65)
+
+ggsave('Second_Half_Forest.jpg', plot=second_half.forest_plot, path=plotDir,
+       units='in', width=7.6, height=4.51)
 
 
 ggsave('Overall_Forest_Plot.jpg', plot=overall_forest.plot, path=plotDir,
@@ -1048,8 +1078,9 @@ contrasts(global.exInfluence.studies$Duration.2) <- contr.orthonorm
 duration_model <- update(overall_model, formula. = ~ . + Duration.2,
                          newdata=global.exInfluence.studies,
                          prior= c(overall_effect.priors, betaWeight_prior),
-                         iter = 10000, chains = 4, warmup=2000,
+                         iter = 10000, chains = 4, warmup=2000, cores = 4,
                          save_pars = save_pars(all=T), seed = 123,
+                         control = list(max_treedepth=11),
                          file=paste(modelDir,'subgroup_duration',sep='/'),
                          file_refit = 'on_change')
 

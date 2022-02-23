@@ -135,3 +135,13 @@ durations_modeHDI <- mode_hdi(duration_posts, .width=.89)
 duration_pairs <- pairs(emmeans(duration_model, ~ Duration.2))
 
 bayesfactor_parameters(duration_pairs, prior=duration_model)
+
+# ---- Plot Posteriors vs Priors ----
+
+overall.bf_plot <- plot(model.bfs$Overall) + 
+  scale_fill_manual(values = c('lightblue','red')) + 
+  scale_color_manual(values = c('lightblue','red')) + 
+  theme_minimal() + 
+  labs(title='Overall Pooled Effect Posterior vs Prior', x=expression(mu)) + 
+  theme(plot.title = element_text(size=13,hjust = 0.5),
+        axis.line.x = element_line(colour="black",size=.4))

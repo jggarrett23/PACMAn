@@ -1545,10 +1545,10 @@ for (iRow in 1:nrow(post.studies.df)){
 allStudies_effects.df <- rbind(pre_post_effects.df,during_effects.df,post_effects.df)
 
 
-
 # recode RT and Error measures (i.e., negative RT effect indicates faster response during exercise. Multiply by negative 1 to make positive)
 recode_rows.idx <- which(grepl('RT|Interference|Error',allStudies_effects.df$DV))
 allStudies_effects.df$SMD[recode_rows.idx] <- allStudies_effects.df$SMD[recode_rows.idx] *-1
+allStudies_effects.df$r[recode_rows.idx] <- allStudies_effects.df$r[recode_rows.idx] * -1
 
 # reindex
 rownames(allStudies_effects.df) <- 1:nrow(allStudies_effects.df)
