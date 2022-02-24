@@ -1,8 +1,3 @@
-# TODO: Fix storage of designs with multiple post tests. 
-# Fix studies with NA for effect size measures
-# Compute effect sizes for other task times.
-
-
 "
 -----------------------------------------------------------
 PACMAn Meta-Analysis: Compute Effect Sizes
@@ -106,7 +101,7 @@ es.var <- function(design,cond1.n,cond2.n,smd){
 parentDir <- getwd()
 dataDir <- file.path(parentDir,'Data')
 
-setwd(dataDir)
+#setwd(dataDir)
 
 #gs4_auth(email = 'jordangarrett@ucsb.edu')
 #sheet_link <- 'https://docs.google.com/spreadsheets/d/1I7TtqSe9-p8RNyXuS_DJw3f0KmSOWysx9_lxFKaNSLM/edit#gid=0'
@@ -219,11 +214,11 @@ all_taskTimes <- unique(allStudy_data.filt1$`Task Execution Time`)
 
 # separate index for task times with difference scores.
 # values based off all_taskTimes vector
-pre_post.idx <- c(1,6,9:12,14:16)
+pre_post.idx <- c(1,6,9:12,14:16,18)
 pre_during_post.idx <- c(4,7)
-during.idx <- c(2,3,20)
-post.idx <- c(5,13,17,21)
-pre.idx <- c(18,19)
+during.idx <- c(2,3,22)
+post.idx <- c(5,13,17,19,23)
+pre.idx <- c(20,21)
 during_post.idx <- 8
 
 # for study ID 7, exp 2, comparisons between exercise intensities are between subjects,
@@ -431,8 +426,126 @@ for (iRow in seq(nrow(pre_post.studies.df))){
     study_effects.mat <- cbind(ex_levelName.idx,ex_levelName.idx, study.n,task_name.idx,standardized.diff,
           standardized.diff_se,post.labels, corr.es, corr.se)
     
+  } else if (study_data$`Article ID` == 141 || study_data$`Article ID` == 156) {
+    
+    
+    # rest should always be the first exercise level
+    allRest_mean.cols_idx <- allTask_mean.cols[seq(1,length(allTask_mean.cols), by = 5)]
+    allEx_mean.cols_idx <- setdiff(allTask_mean.cols,allRest_mean.cols_idx)
+    
+    # grab indices of columns with data
+    rest_mean.cols_bool <- sapply(study_data[allRest_mean.cols_idx], 
+                                  function(x){
+                                    !any(c(is.na(x),is.null(x[[1]])))
+                                  })
+    
+    ex_mean.cols_bool <- sapply(study_data[allEx_mean.cols_idx],
+                                function(x){
+                                  !any(c(is.na(x),is.null(x[[1]])))
+                                })
+    
+    rest_taskMean.cols_idx <- allRest_mean.cols_idx[rest_mean.cols_bool]
+    
+    ex_taskMean.cols_idx <- allEx_mean.cols_idx[ex_mean.cols_bool]
+    
+    
+    rest_taskSd.cols_idx <- rest_taskMean.cols_idx+1
+    ex_taskSd.cols_idx <- ex_taskMean.cols_idx+1
+    
+    rest_con.n <- unlist(condLevels.n[grepl('rest|control|baseline',condLevels,ignore.case = T)])
+    exLevels.n <- condLevels.n[!grepl('rest|control|baseline',condLevels,ignore.case = T)]
+    
+    n_outcomes <- length(rest_taskMean.cols_idx)
+    
+    # for studies with multiple post tests
+    n_postMeasures <- length(which(post_measures.idx))
+    
+    rest_mean <- as.numeric(study_data[rest_taskMean.cols_idx])
+    rest_sd <- as.numeric(study_data[rest_taskSd.cols_idx])
+    
+    ex_means <- as.numeric(study_data[ex_taskMean.cols_idx])
+    ex_sds <- as.numeric(study_data[ex_taskSd.cols_idx])
+    
+    standardized.diff <- (ex_means - rest_mean) / rest_sd
+    
+    rest.n <- condLevels.n[[1]]
+    ex.n <- as.numeric(condLevels.n[c(2:length(condLevels))])
+    
+    diff.var <- sapply(standardized.diff, 
+                       function(x){
+                         es.var(design, rest.n, ex.n[which(standardized.diff == x)],x)})
+    
+    standardized.diff_se <- sqrt(diff.var)
+    
+    
+    rest_levelName.idx <- rep(13,length(standardized.diff))
+    ex_levelName.idx <- seq(17,17+(4*(n_condLevels-2)),by=4)
+    task_name.idx <- rep(rest_taskMean.cols_idx[1]-2,length(standardized.diff))
+    post.labels <- rep('post', length(standardized.diff))
+    
+    a <- ((rest.n + ex.n)^2)/(rest.n * ex.n)
+    corr.es <- standardized.diff / sqrt(standardized.diff^2 + a)
+    
+    corr.se <- ((a^2)*standardized.diff_se)/(((standardized.diff^2) + a)^3)
+    
+    study_effects.mat <- cbind(ex_levelName.idx,rest_levelName.idx, study.n,task_name.idx,standardized.diff,
+                               standardized.diff_se,post.labels, corr.es, corr.se)
+    
+      
+  } else if (study_data$`Article ID` == 12) {
+    # compare control group to pre exercise (which is really post b/c exercising before memory encoding)
+    
+    rest_cols.idx <- allTask_mean.cols[seq(1,length(allTask_mean.cols), by=5)]
+    pre_cols.idx <- rest_cols.idx + 2
+    
+    rest_mean.cols_bool <- sapply(study_data[rest_cols.idx],
+                                 function(x){
+                                   !any(c(is.na(x), is.null(x[[1]])))
+                                 })
+    
+    pre_mean.cols_bool <- sapply(study_data[pre_cols.idx],
+                                  function(x){
+                                    !any(c(is.na(x), is.null(x[[1]])))
+                                  })
+    
+    rest_mean.cols_idx <- rest_cols.idx[rest_mean.cols_bool]
+    pre_mean.cols_idx <- pre_cols.idx[pre_mean.cols_bool]
+    
+    rest.n <- unlist(condLevels.n[grepl('rest',condLevels,ignore.case = T)])
+    pre.n <- unlist(condLevels.n[grepl('pre',condLevels,ignore.case = T)])
+    
+    rest_taskMeans <- as.numeric(study_data[rest_mean.cols_idx])
+    rest_taskSds <- as.numeric(study_data[rest_mean.cols_idx+1])
+    
+    pre_taskMeans <- as.numeric(study_data[pre_mean.cols_idx])
+    
+    standardized.diff <- (pre_taskMeans - rest_taskMeans) / rest_taskSds
+    
+    diff.var <- sapply(standardized.diff,
+                       function(x){
+                         es.var(design,rest.n,pre.n,x)
+                       })
+    
+    standardized.diff_se <- sqrt(diff.var)
+    
+    rest_levelName.idx <- rep(13,length(standardized.diff))
+    pre_levelName.idx <- rep(17,length(standardized.diff))
+    task_name.idx <- rest_mean.cols_idx-2
+    
+    # for ease of consolidation later on
+    study_data[17] <- 'Low'
+    
+    post.labels <- rep('post', length(standardized.diff))
+    
+    a <- ((rest.n + pre.n)^2)/(rest.n * pre.n)
+    corr.es <- standardized.diff / sqrt(standardized.diff^2 + a)
+    
+    corr.se <- ((a^2)*standardized.diff_se)/(((standardized.diff^2) + a)^3)
+    
+    study_effects.mat <- cbind(pre_levelName.idx,rest_levelName.idx, study.n,task_name.idx,standardized.diff,
+                               standardized.diff_se,post.labels, corr.es, corr.se)
   }
-  else if (any(grepl('rest', condLevels, ignore.case=T))){ # Studies with rest condition
+  else if (any(grepl('rest|control|baseline', condLevels, ignore.case=T))){ # Studies with rest condition
   
     # rest should always be the first exercise level
     allRest_mean.cols_idx <- allTask_mean.cols[seq(1,length(allTask_mean.cols), by = 5)]
@@ -463,8 +576,8 @@ for (iRow in seq(nrow(pre_post.studies.df))){
     ex_taskSd.cols_idx <- ex_taskMean.cols_idx+1
     
     
-    rest_con.n <- unlist(condLevels.n[grepl('rest',condLevels,ignore.case = T)])
-    exLevels.n <- condLevels.n[!grepl('rest',condLevels,ignore.case = T)]
+    rest_con.n <- unlist(condLevels.n[grepl('rest|control|baseline',condLevels,ignore.case = T)])[1]
+    exLevels.n <- condLevels.n[!grepl('rest|control|baseline',condLevels,ignore.case = T)][1]
     
     n_outcomes <- length(rest_taskMean.cols_idx)
     
@@ -556,6 +669,10 @@ for (iRow in seq(nrow(pre_post.studies.df))){
                                    standardized.diff_se,post.labels, corr.es, corr.se)
       
       study_effects.mat <- rbind(study_effects.mat, current_taskEffects)
+      
+      if (any(is.na(study_effects.mat))) {
+        foo = 0
+      }
     }
     
     
@@ -709,7 +826,6 @@ for (iRow in seq(nrow(pre_post.studies.df))){
     foo <- 0
   }
   
-  
   study_effects.df <- data.frame('ID'= ids,
                                  'Author'= author,
                                  'Year' = year,
@@ -775,7 +891,7 @@ for (iRow in 1:nrow(during.studies.df)){
   during_measures.idx <- grepl('during',task_time)
   
   # there needs to be a comparison condition for calculating during effects
-  # studies with pre, during, post designs, calcuate during-pre effects separately
+  # studies with pre, during, post designs, calculate during-pre effects separately
   if (length(condLevels) < 2){
     next
   }
@@ -786,7 +902,61 @@ for (iRow in 1:nrow(during.studies.df)){
   # Special Cases
   if ((study_data$`Article ID` == 51) || (study_data$`Article ID` == 13)){
     next
-  } else if (any(grepl('rest|control',condLevels, ignore.case = T))){
+  } else if (study_data$`Article ID`== 12){
+    
+    rest_cols.idx <- allTask_mean.cols[seq(1,length(allTask_mean.cols), by=5)]
+    during_cols.idx <- rest_cols.idx + 4
+    
+    rest_mean.cols_bool <- sapply(study_data[rest_cols.idx],
+                                  function(x){
+                                    !any(c(is.na(x), is.null(x[[1]])))
+                                  })
+    
+    during_mean.cols_bool <- sapply(study_data[during_cols.idx],
+                                 function(x){
+                                   !any(c(is.na(x), is.null(x[[1]])))
+                                 })
+    
+    rest_mean.cols_idx <- rest_cols.idx[rest_mean.cols_bool]
+    during_mean.cols_idx <- during_cols.idx[during_mean.cols_bool]
+    
+    rest.n <- unlist(condLevels.n[grepl('rest',condLevels,ignore.case = T)])
+    during.n <- unlist(condLevels.n[grepl('during',condLevels,ignore.case = T)])
+    
+    rest_taskMeans <- as.numeric(study_data[rest_mean.cols_idx])
+    rest_taskSds <- as.numeric(study_data[rest_mean.cols_idx+1])
+    
+    during_taskMeans <- as.numeric(study_data[during_mean.cols_idx])
+    
+    standardized.diff <- (during_taskMeans - rest_taskMeans) / rest_taskSds
+    
+    diff.var <- sapply(standardized.diff,
+                       function(x){
+                         es.var(design,rest.n,during.n,x)
+                       })
+    
+    standardized.diff_se <- sqrt(diff.var)
+    
+    rest_levelName.idx <- rep(13,length(standardized.diff))
+    during_levelName.idx <- rep(17,length(standardized.diff))
+    task_name.idx <- rest_mean.cols_idx-2
+    
+    # for ease of consolidation later on
+    study_data[17] <- 'Low'
+    
+    during.labels <- rep('during', length(standardized.diff))
+    
+    a <- ((rest.n + during.n)^2)/(rest.n * during.n)
+    corr.es <- standardized.diff / sqrt(standardized.diff^2 + a)
+    
+    corr.se <- ((a^2)*standardized.diff_se)/(((standardized.diff^2) + a)^3)
+    
+    study_effects.mat <- cbind(during_levelName.idx,rest_levelName.idx, study.n,task_name.idx,standardized.diff,
+                               standardized.diff_se,during.labels, corr.es, corr.se)
+    
+    
+  }
+  else if (any(grepl('rest|control',condLevels, ignore.case = T))){
     
     # -- Studies w/ control condition --
     
