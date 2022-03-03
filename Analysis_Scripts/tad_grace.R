@@ -100,7 +100,7 @@ priors <- c(prior(normal(0,1), class=Intercept),
 hdi_width = .89
 
 
-acc.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|Author/es.ids) + Duration.3,
+acc.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|ID/es.ids) + Duration.3,
                  data=acc_data,
                  prior= priors,
                  iter = 5000, chains = 4, warmup=1000,
@@ -108,7 +108,7 @@ acc.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|Author/es.ids) + Duration.3,
                  file=paste(modelDir,'tad_grace_acc',sep='/'),
                  file_refit = 'on_change')
 
-rt.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|Author/es.ids) + Duration.3,
+rt.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|ID/es.ids) + Duration.3,
                  data=rt_data,
                  prior= priors,
                  iter = 5000, chains = 4, warmup=1000,
@@ -193,6 +193,107 @@ rt.task_counts <- rt_data %>%
   count()
 
 
+# ---- Break down into requested categories ----
+
+rt.categories <- c('choice rt', 'reaction time task', 'simple detection',
+                   'simple reaction time task')
+
+exec.categories <- c('flanker','go/no-go', 'task switching')
+
+percep_motor.categories <- c('kicking accuracy test')
+
+lang_prod <- c('cowat')
+
+lang_comp <- c('customized online vocabulary test')
+
+# for memory category, just use domain == 'memory'
+
+rt.model.2 <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|ID/es.ids) + Duration.3,
+                  data=rt_data %>% filter(Task.2 %in% rt.categories),
+                  prior= priors,
+                  iter = 5000, chains = 4, warmup=1000,
+                  save_pars = save_pars(all=T), seed = 123,
+                  control = list(adapt_delta=.999),
+                  file=paste(modelDir,'tad_grace_rt_2',sep='/'),
+                  file_refit = 'on_change')
+
+exec.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|ID/es.ids) + Duration.3,
+                  data=acc_data %>% filter(Task.2 %in% exec.categories),
+                  prior= priors,
+                  iter = 5000, chains = 4, warmup=1000,
+                  save_pars = save_pars(all=T), seed = 123,
+                  control = list(adapt_delta=0.99),
+                  file=paste(modelDir,'tad_grace_exec',sep='/'),
+                  file_refit = 'on_change')
+
+mem.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|ID/es.ids) + Duration.3,
+                          data=acc_data %>% filter(Domain.2 == 'Memory'),
+                          prior= priors,
+                          iter = 5000, chains = 4, warmup=1000,
+                          save_pars = save_pars(all=T), seed = 123,
+                          control = list(adapt_delta=0.99),
+                          file=paste(modelDir,'tad_grace_memory',sep='/'),
+                          file_refit = 'on_change')
+
+lang_prod.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|ID/es.ids) + Duration.3,
+                  data=acc_data %>% filter(Task.2 %in% lang_prod),
+                  prior= priors,
+                  iter = 10000, chains = 4, warmup=4000,
+                  save_pars = save_pars(all=T), seed = 123,
+                  control = list(adapt_delta=0.999),
+                  file=paste(modelDir,'tad_grace_langProd',sep='/'),
+                  file_refit = 'on_change')
+
+lang_comp.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|ID/es.ids) + Duration.3,
+                       data=acc_data %>% filter(Task.2 %in% lang_comp),
+                       prior= priors,
+                       iter = 10000, chains = 4, warmup=3000,
+                       save_pars = save_pars(all=T), seed = 123,
+                       control = list(adapt_delta=0.999),
+                       file=paste(modelDir,'tad_grace_langComp',sep='/'),
+                       file_refit = 'on_change')
+
+rt.2.marginals <- emmeans(rt.model.2, ~Duration.3)
+exec.marginals <- emmeans(exec.model, ~Duration.3)
+mem.marginals <- emmeans(mem.model, ~Duration.3)
+langProd.marginals <- emmeans(lang_prod.model, ~Duration.3)
+
+rt.2.posteriors <- as.data.frame(rt.2.marginals@post.beta)
+colnames(rt.2.posteriors) <- unlist(rt.2.marginals@levels) 
+
+exec.posteriors <- as.data.frame(exec.marginals@post.beta)
+colnames(exec.posteriors) <- unlist(exec.marginals@levels) 
+
+mem.posteriors <- as.data.frame(mem.marginals@post.beta)
+colnames(mem.posteriors) <- unlist(mem.marginals@levels) 
+
+langProd.posteriors <- as.data.frame(langProd.marginals@post.beta)
+colnames(langProd.posteriors) <- unlist(langProd.marginals@levels)
+
+rt.2.r <- as.data.frame(apply(rt.2.posteriors, 2, 
+                function(x){
+                  r <- (exp(2*x) - 1)/(exp(2*x) + 1)
+                }))
+
+rt.2.mode <- mode_hdi(rt.2.r, .width=.89)
 
 
+exec.r <- as.data.frame(apply(exec.posteriors, 2, 
+                              function(x){
+                                r <- (exp(2*x) - 1)/(exp(2*x) + 1)
+                              }))
+exec.mode <- mode_hdi(exec.r, .width=0.89)
 
+
+mem.r <- as.data.frame(apply(mem.posteriors, 2,
+                       function(x){
+                         r <- (exp(2*x)-1)/(exp(2*x) + 1)
+                       }))
+mem.mode <- mode_hdi(mem.r, .width=0.89)
+
+
+langProd.r <- as.data.frame(apply(langProd.posteriors, 2, 
+                                  function(x){
+                                    r <- (exp(2*x) - 1)/(exp(2*x) + 1)
+                                  }))
+langProd.mode <- mode_hdi(langProd.r, .width = 0.89)

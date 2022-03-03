@@ -813,7 +813,7 @@ cogDomain_model.post_samps <- posterior_samples(cogDomain_model, c('^b','^sd'))
 
 # transform posterior samples so they are not deflections from intercept
 cogDomain_model.betas <- cogDomain_model.post_samps %>% 
-  select(b_Intercept:b_Domain.2WorkingMemory)
+  select(b_Intercept:b_Domain.211)
 
 
 names(cogDomain_model.betas) <- levels(global.exInfluence.studies$Domain.2)
@@ -921,7 +921,7 @@ summary(testTime_model)
 testTime_model.post_samps <- posterior_samples(testTime_model, c('^b','^sd'))
 
 testTime_model.betas <- testTime_model.post_samps %>% 
-  select(b_Intercept:b_EffectTime.2post180min)
+  select(b_Intercept:b_EffectTime.24)
 
 
 names(testTime_model.betas) <- levels(global.exInfluence.studies$EffectTime.2)
@@ -960,8 +960,6 @@ ggsave('Subgroup_taskTime_Posteriors.jpg', plot=testTime_model.posterior_plot, p
 
 
 ## ---- RT vs Accuracy ----
-contrasts(global.exInfluence.studies$DV.2) <- contr.orthonorm
-
 outcome_model <- update(overall_model, formula. = ~ . + DV.2,
                         newdata=global.exInfluence.studies,
                         prior= c(overall_effect.priors, betaWeight_prior),
