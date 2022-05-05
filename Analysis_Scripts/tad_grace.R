@@ -26,7 +26,7 @@ modelDir <- file.path(parentDir,'Models')
 setwd(dataDir)
 
 # Load data
-global.exInfluence.studies <- readRDS('global_exInfluence_effects.rds')
+effectSizes.df <- readRDS('study_effectSizes_hand.rds')
 
 # Parse data into time bins that Tad is interested in 
 "
@@ -36,59 +36,118 @@ global.exInfluence.studies <- readRDS('global_exInfluence_effects.rds')
 31-60 mins
 > 60 mins
 "
-global.exInfluence.studies$Duration.3 <- sapply(tolower(global.exInfluence.studies$Duration),
-                                                function(x){
-                                                  if (grepl('exhaustion', x)){
-                                                    t <- 'volitional exhaustion'
-                                                  } else if (grepl('completion|game',x)){
-                                                    t <- 'task completion'
-                                                  } else if (grepl('total 7|3 x 1', x)){
-                                                    t <- '2-10'
-                                                  } else if (grepl('> 55', x)) {
-                                                    t <- '31-60'
-                                                  } else if (grepl('sets', x)){
-                                                    t <- 'sets duration'
-                                                  } else if (grepl('n/a|need to', x)){
-                                                    t <- NA
-                                                  } else {
-                                                    num <- as.numeric(str_extract(x, '[0-9]{1,3}'))
-                                                    
-                                                    if (!any(is.na(num), is.null(num))){
-                                                      
-                                                      if (num < 2){
-                                                        t <- '<2'
-                                                      } else if (num >= 2 & num <= 10){
-                                                        t <- '2-10'
-                                                      } else if (num >= 11 & num <= 30){
-                                                        t <- '11-30'
-                                                      } else if (num >= 31 & num <= 60){
-                                                        t <- '31-60'
-                                                      } else if (num > 60){
-                                                        t <- '>60'
-                                                      }
-                                                      
-                                                    } else {
-                                                      x
-                                                    }
-                                                  }
-                                                })
+effectSizes.df$Duration.3 <- apply(effectSizes.df, 1,  
+                                   function(row){
+                                     
+                                     if (any(is.null(row['Ex.Level.Duration..mins.']),
+                                             is.na(row['Ex.Level.Duration..mins.']), 
+                                             row['Ex.Level.Duration..mins.'] != '')){
+                                       x <- tolower(row['Ex.Level.Duration..mins.'])
+                                     } else {
+                                       x <- tolower(row['Compare.Level.Duration..mins.'])
+                                     }
+                                     
+                                     if (grepl('exhaustion', x)){
+                                       t <- 'volitional exhaustion'
+                                     } else if (grepl('completion|game|task duration|duration of task',x)){
+                                       t <- 'task completion'
+                                     } else if (grepl('total 7|3 x 1', x)){
+                                       t <- '2-10'
+                                     } else if (grepl('> 55', x)) {
+                                       t <- '31-60'
+                                     } else if (grepl('sets', x)){
+                                       t <- 'sets duration'
+                                     } else if (grepl('n/a|need to', x)){
+                                       t <- NA
+                                     } else {
+                                       num <- as.numeric(str_extract(x, '[0-9]{1,3}'))
+                                       
+                                       if (!any(is.na(num), is.null(num))){
+                                         
+                                         if (num < 2){
+                                           t <- '<2'
+                                         } else if (num >= 2 & num <= 10){
+                                           t <- '2-10'
+                                         } else if (num >= 11 & num <= 30){
+                                           t <- '11-30'
+                                         } else if (num >= 31 & num <= 60){
+                                           t <- '31-60'
+                                         } else if (num >= 60){
+                                           t <- '>60'
+                                         }
+                                         
+                                       } else {
+                                         x
+                                       }
+                                     }
+                                   })
 
-global.exInfluence.studies$Duration.3 <- factor(global.exInfluence.studies$Duration.3)
 
-contrasts(global.exInfluence.studies$Duration.3) <- contr.orthonorm
+
+effectSizes.df$Duration.3 <- factor(effectSizes.df$Duration.3)
+
+contrasts(effectSizes.df$Duration.3) <- contr.orthonorm
+
+effectSizes.df$Task.2 <- sapply(tolower(effectSizes.df$Cognitive.Task), 
+                                            function(x){
+                                              if (grepl('stroop', x)){
+                                                x <- 'stroop'
+                                              } else if (grepl('sternberg|sterberg', x)) {
+                                                x <- 'sternberg'
+                                              } else if (grepl('flanker|flaker', x)){
+                                                x <- 'flanker'
+                                              } else if (grepl('vigilance|vigiliance', x)){
+                                                x <- 'vigilance'
+                                              } else if (grepl('back', x)){
+                                                x <- 'n-back'
+                                              } else if (grepl('choice', x)){
+                                                x <-  'choice rt'
+                                              } else if (grepl('task switching', x)){
+                                                x <- 'task switching'
+                                              } else if (grepl('rey', x)){
+                                                x <- 'ravlt'
+                                              } else if (grepl('continuous visual', x)){
+                                                x <- 'cavt'
+                                              } else if (grepl('monitoring', x)){
+                                                x <-  'monitoring'
+                                              } else if (grepl('cpt', x)){
+                                                x <- 'cpt'
+                                              } else if (grepl('multitasking', x)){
+                                                x <- 'multitasking'
+                                              } else if (grepl('switch', x)){
+                                                x <- 'task switching'
+                                              } else if (grepl('trail', x)){
+                                                x <- 'trail making'
+                                              } else if (grepl('global', x)){
+                                                x <- 'global vs local detection'
+                                              } else if (grepl('go/no', x)){
+                                                x <- 'go/no-go'
+                                              } else if (grepl('spatial', x)){
+                                                x <- 'spatial WM'
+                                              } else if (grepl('assocation', x)){
+                                                x <- 'word association'
+                                              } else if (grepl('pro/', x)){
+                                                x <- 'pro/anti-response'
+                                              } else {
+                                                x 
+                                              }
+                                            })
+
+effectSizes.df$Task.2 <- factor(effectSizes.df$Task.2)
+
 
 # Convert correlations to fishers z?
-global.exInfluence.studies <- global.exInfluence.studies %>% 
-  mutate(fisher_z = 0.5 * log((1+r)/(1-r)),
-         fisher_z_se = sqrt(1/(Effect_N - 3)))
+effectSizes.df <- effectSizes.df %>% 
+  mutate(fisher_z = 0.5 * log((1+Correlation)/(1-Correlation)),
+         fisher_z_se = sqrt(1/(Effect.N - 3)))
 
 
 # Separate RT and ACC data
-rt_data <- global.exInfluence.studies %>% 
-  filter(DV.2 == 'RT')
+rt_data <- effectSizes.df %>% 
+  filter(OutcomeVariable == 'RT')
 
-acc_data <- global.exInfluence.studies %>% 
-  filter(DV.2 == 'Accuracy')
+acc_data <- effectSizes.df %>% 
+  filter(OutcomeVariable == 'Accuracy')
 
 
 # ---- Modeling ----
@@ -100,7 +159,7 @@ priors <- c(prior(normal(0,1), class=Intercept),
 hdi_width = .89
 
 
-acc.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|ID/es.ids) + Duration.3,
+acc.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|Article.ID/es.ids) + Duration.3,
                  data=acc_data,
                  prior= priors,
                  iter = 5000, chains = 4, warmup=1000,
@@ -108,7 +167,7 @@ acc.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|ID/es.ids) + Duration.3,
                  file=paste(modelDir,'tad_grace_acc',sep='/'),
                  file_refit = 'on_change')
 
-rt.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|ID/es.ids) + Duration.3,
+rt.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|Article.ID/es.ids) + Duration.3,
                  data=rt_data,
                  prior= priors,
                  iter = 5000, chains = 4, warmup=1000,
@@ -118,7 +177,7 @@ rt.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|ID/es.ids) + Duration.3,
 
 # compute marginals
 
-durations <- levels(global.exInfluence.studies$Duration.3)
+durations <- levels(effectSizes.df$Duration.3)
 
 acc.marginals <- emmeans(acc.model, ~Duration.3)
 
@@ -208,7 +267,7 @@ lang_comp <- c('customized online vocabulary test')
 
 # for memory category, just use domain == 'memory'
 
-rt.model.2 <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|ID/es.ids) + Duration.3,
+rt.model.2 <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|Article.ID/es.ids) + Duration.3,
                   data=rt_data %>% filter(Task.2 %in% rt.categories),
                   prior= priors,
                   iter = 5000, chains = 4, warmup=1000,
@@ -217,7 +276,7 @@ rt.model.2 <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|ID/es.ids) + Duration.3,
                   file=paste(modelDir,'tad_grace_rt_2',sep='/'),
                   file_refit = 'on_change')
 
-exec.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|ID/es.ids) + Duration.3,
+exec.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|Article.ID/es.ids) + Duration.3,
                   data=acc_data %>% filter(Task.2 %in% exec.categories),
                   prior= priors,
                   iter = 5000, chains = 4, warmup=1000,
@@ -226,7 +285,7 @@ exec.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|ID/es.ids) + Duration.3,
                   file=paste(modelDir,'tad_grace_exec',sep='/'),
                   file_refit = 'on_change')
 
-mem.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|ID/es.ids) + Duration.3,
+mem.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|Article.ID/es.ids) + Duration.3,
                           data=acc_data %>% filter(Domain.2 == 'Memory'),
                           prior= priors,
                           iter = 5000, chains = 4, warmup=1000,
@@ -235,16 +294,16 @@ mem.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|ID/es.ids) + Duration.3,
                           file=paste(modelDir,'tad_grace_memory',sep='/'),
                           file_refit = 'on_change')
 
-lang_prod.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|ID/es.ids) + Duration.3,
+lang_prod.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|Article.ID/es.ids) + Duration.3,
                   data=acc_data %>% filter(Task.2 %in% lang_prod),
                   prior= priors,
                   iter = 10000, chains = 4, warmup=4000,
                   save_pars = save_pars(all=T), seed = 123,
-                  control = list(adapt_delta=0.999),
+                  control = list(adapt_delta=0.999, max_treedepth=11),
                   file=paste(modelDir,'tad_grace_langProd',sep='/'),
                   file_refit = 'on_change')
 
-lang_comp.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|ID/es.ids) + Duration.3,
+lang_comp.model <- brm(fisher_z|se(fisher_z_se) ~ 1 + (1|Article.ID/es.ids) + Duration.3,
                        data=acc_data %>% filter(Task.2 %in% lang_comp),
                        prior= priors,
                        iter = 10000, chains = 4, warmup=3000,

@@ -31,6 +31,7 @@ library(ggridges)
 library(reshape2)
 library(gt)
 library(bayestestR)
+library(readxl)
 
 # --- Setting Up Directories ---
 
@@ -43,7 +44,14 @@ plotDir <- file.path(parentDir,'Figures')
 setwd(dataDir)
 
 # Load data
-allStudies_effects.df <- readRDS('allStudies_effects.rds')
+acsm_file <- 'PACMAN Effect Sizes.xlsx'
+data_file <- 'PACMAN_Calculated Effect Sizes.csv'
+  
+allStudies_efffects.df <- read.csv(data_file)
+acsm.intensities <- read_excel(acsm_file, sheet='ACSM Intensities')
+
+
+#allStudies_effects.df <- readRDS('allStudies_effects.rds')
 
 
 # Convert effects to hedges g
