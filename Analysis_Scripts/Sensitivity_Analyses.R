@@ -25,7 +25,7 @@ library(tidybayes)
 
 # --- Setting Up Directories ---
 
-parentDir <- getwd()
+parentDir <- '/work/garrett/PACMAn'
 modelDir <- file.path(parentDir,'Models')
 plotDir <- file.path(parentDir,'Figures')
 
