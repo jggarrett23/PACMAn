@@ -1,23 +1,22 @@
 Workflow
 
+# Mitigate publication bias
 Trim_Fill_Correction.R
 
 # Estimate models
-sbatch cluster_Bayesian_Modeling_job.slurm
+cluster_Bayesian_Modeling.R
 
 # Estimate interaction models
-sbatch cluster_Model_Interactions_job.slurm
+Model_Interactions.R
 
 # Secondary moderator analyses
-sbatch cluster_NatCommPsy_Moderators_job.slurm
+NatCommPsy_Moderators.R
 
 # Estimate marginals
-sbatch cluster_Model_Marginals_job.slurm
-
-sbatch cluster_Interaction_Marginals_job.slurm
+Model_Marginals.R
 
 # Estimate BFs for model comparison
-sbatch cluster_Model_Compare_BFs_job.slurm
+Model_Compare_BFs_job.slurm
 
 Model_Compare_InclusionBF.ipynb 
 
@@ -27,18 +26,18 @@ Plot_Posteriors.R
 Plot_Interaction_Model_Posteriors.R
 
 # Sensitivity Analyses
-sbatch cluster_Sensitivity_Analyses_job.slurm
+Sensitivity_Analyses.R
 
 # Executive Function meta-analysis
-sbatch cluster_EF_Modeling_job.slurm
+EF_Modeling_job.R
 
-sbatch cluster_EF_Model_Interactions_job.slurm
+EF_Model_Interactions.R
 
-sbatch cluster_EF_Model_Marginals_job.slurm
+EF_Model_Marginals.R
 
-sbatch cluster_EF_Interaction_Model_Marginals_job.slurm
+EF_Interaction_Model_Marginals.R
 
-sbatch cluster_EF_Model_Compare_BFs_job.slurm
+EF_Model_Compare_BFs.R
 
 EF_Plot_Posteriors.R
 
