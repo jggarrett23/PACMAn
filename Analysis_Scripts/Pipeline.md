@@ -1,6 +1,7 @@
 # Workflow
 
 ### Mitigate publication bias
++ Funnel_Plot.R
 + Trim_Fill_Correction.R
 
 ### Estimate models
