@@ -13,7 +13,7 @@ Conducting the meta-analysis requires:
 The brms package is a little finicky to install. To install the **brms** package follow the directions for your operating system in the [brms repository](https://github.com/paul-buerkner/brms#faq).
 
 # USAGE
-The meta-analysis was conducted using a Bayesian hierarchical model. Model files can be downloaded from the Attention Lab [google drive](https://drive.google.com/drive/folders/1VJ0x-WGR0ZiCf7OIfjBIddwbkET4LIrR?usp=sharing), and includes analyses of the following exercise factors on cognition:
+The meta-analysis was conducted using a Bayesian hierarchical model. Model files can be downloaded from the Attention Lab [google drive](https://drive.google.com/drive/folders/18PDFOBtmQ1oSd7lSJtLcrRE9gLwu7nrC?usp=drive_link), and includes analyses of the following exercise factors on cognition:
 * Duration
 * Experimental task
 * Task outcome measure (RT and Accuracy)
